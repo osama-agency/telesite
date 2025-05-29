@@ -1,23 +1,92 @@
 import React from 'react';
-import { Package2 } from 'lucide-react';
+import { Package2, Search, Filter, Database } from 'lucide-react';
+import { motion } from 'framer-motion';
+
 interface EmptyStateProps {
   message: string;
+  icon?: React.ElementType;
   action?: {
     label: string;
     onClick: () => void;
   };
+  type?: 'default' | 'search' | 'filter' | 'error';
 }
+
 export function EmptyState({
   message,
-  action
+  icon,
+  action,
+  type = 'default'
 }: EmptyStateProps) {
-  return <div className="flex flex-col items-center justify-center p-8 space-y-4 min-h-[200px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-border/50">
-      <div className="rounded-full bg-muted p-3">
-        <Package2 className="h-6 w-6 text-muted-foreground" />
-      </div>
-      <p className="text-muted-foreground text-sm text-center">{message}</p>
-      {action && <button onClick={action.onClick} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm">
-          {action.label}
-        </button>}
-    </div>;
+  const iconMap = {
+    default: Package2,
+    search: Search,
+    filter: Filter,
+    error: Database
+  };
+  
+  const Icon = icon || iconMap[type];
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col items-center justify-center p-8 sm:p-12 space-y-4 min-h-[300px] sm:min-h-[400px]"
+    >
+      <motion.div 
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        transition={{ 
+          delay: 0.1,
+          type: "spring",
+          stiffness: 200,
+          damping: 15
+        }}
+        className="relative"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-2xl" />
+        <div className="relative rounded-full bg-gradient-to-br from-primary/10 to-purple-500/10 p-6 sm:p-8">
+          <Icon className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
+        </div>
+      </motion.div>
+      
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="text-center space-y-2 max-w-sm"
+      >
+        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+          {message}
+        </p>
+      </motion.div>
+      
+      {action && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <button 
+            onClick={action.onClick} 
+            className="btn-primary group"
+          >
+            <span>{action.label}</span>
+            <motion.span
+              className="inline-block ml-2"
+              animate={{ x: [0, 3, 0] }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 1.5,
+                ease: "easeInOut"
+              }}
+            >
+              →
+            </motion.span>
+          </button>
+        </motion.div>
+      )}
+    </motion.div>
+  );
 }

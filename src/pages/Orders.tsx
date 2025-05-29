@@ -1,13 +1,36 @@
 import React, { useEffect, useState, Fragment } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Calculator, Calendar, CheckCircle, ChevronDown, ChevronRight, Edit2, Minus, Package, Package2, Plus, Save, Sparkles, Trash2, Truck, X, Loader2 } from 'lucide-react';
+import { productsApi, type ApiProduct } from '../services/api';
 // Placeholder components and hooks
 const Pagination = ({
   currentPage,
   totalPages,
   onPageChange,
   isLoading
-}: any) => {};
+}: any) => {
+  return (
+    <div className="flex items-center justify-center space-x-2 py-4">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1 || isLoading}
+        className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 disabled:opacity-50"
+      >
+        Пред.
+      </button>
+      <span className="text-sm text-muted-foreground">
+        {currentPage} / {totalPages}
+      </span>
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages || isLoading}
+        className="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 disabled:opacity-50"
+      >
+        След.
+      </button>
+    </div>
+  );
+};
 const usePagination = ({
   totalItems,
   itemsPerPage
@@ -263,7 +286,7 @@ export function Orders() {
   const handleSaveOrder = async (updatedOrder: Order) => {
     try {
       // Store original order for potential revert
-      const originalOrder = orders.find(o => o.id === updatedOrder.id);
+      const originalOrderToRevert = orders.find(o => o.id === updatedOrder.id);
       // Calculate totals
       const totalTRY = updatedOrder.products.reduce((sum, p) => sum + p.quantity * p.costPriceTRY, 0);
       const totalRUB = totalTRY * updatedOrder.tryRate;
@@ -280,8 +303,9 @@ export function Orders() {
     } catch (error) {
       console.error('Failed to save order:', error);
       // Revert optimistic update on error
-      if (originalOrder) {
-        setOrders(prev => prev.map(order => order.id === updatedOrder.id ? originalOrder : order));
+      const originalOrderToRevert = orders.find(o => o.id === updatedOrder.id);
+      if (originalOrderToRevert) {
+        setOrders(prev => prev.map(order => order.id === updatedOrder.id ? originalOrderToRevert : order));
       }
       // Show error notification
       // toast.error('Failed to save order. Please try again.')
@@ -310,7 +334,8 @@ export function Orders() {
   const handleReceiveOrderSave = async (data: {
     products: {
       id: string;
-      quantity: number;
+      expectedQuantity: number;
+      actualQuantity: number;
     }[];
     deliveryCost: number;
   }) => {
@@ -318,13 +343,22 @@ export function Orders() {
     // Store original order for potential revert
     const originalOrder = orders.find(o => o.id === receivingOrder.id);
     try {
+      // Convert from expected/actual to just quantity
+      const processedData = {
+        products: data.products.map(p => ({
+          id: p.id,
+          quantity: p.actualQuantity
+        })),
+        deliveryCost: data.deliveryCost
+      };
+      
       // Optimistic update
       setOrders(prev => prev.map(order => {
         if (order.id === receivingOrder.id) {
           return {
             ...order,
             products: order.products.map(product => {
-              const receivedProduct = data.products.find(p => p.id === product.id);
+              const receivedProduct = processedData.products.find(p => p.id === product.id);
               return {
                 ...product,
                 quantity: product.quantity - (receivedProduct?.quantity || 0)
@@ -335,7 +369,7 @@ export function Orders() {
         return order;
       }));
       // Here you would make the API call
-      // await ordersApi.receiveOrder(receivingOrder.id, data)
+      // await ordersApi.receiveOrder(receivingOrder.id, processedData)
       // Create expense record if there are delivery costs
       if (data.deliveryCost > 0) {
         try {
@@ -378,8 +412,11 @@ export function Orders() {
         setApiProducts(response.data);
       } catch (error) {
         console.error('Failed to fetch products:', error);
-        // Fallback to demo products if API fails
-        setApiProducts(DEMO_PRODUCTS);
+        // Fallback to demo products if API fails - using minimal required fields
+        setApiProducts(demoProducts.map(dp => ({
+          id: dp.id as any,
+          name: dp.name,
+        } as ApiProduct)));
       } finally {
         setProductsLoading(false);
       }
@@ -492,83 +529,115 @@ export function Orders() {
         </div>
         {/* Responsive table wrapper */}
         <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-          <div className="min-w-[900px]">
-            {/* Table content remains the same but with improved responsive styles */}
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Дата
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    ID заказа
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Товары
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Сумма TRY
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Курс
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Сумма ₽
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Статус
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {orders.slice(paginatedItems.startIndex, paginatedItems.endIndex).map(order => <Fragment key={order.id}>
-                      <tr className="hover:bg-accent/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {new Date(order.date).toLocaleDateString('ru-RU')}
+          <table className="w-full min-w-[800px]">
+            <thead className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 sticky top-0 z-10">
+              <tr>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider sticky left-0 bg-gradient-to-r from-slate-100 to-slate-100 dark:from-slate-800 dark:to-slate-800 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                  Дата
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Курс
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">
+                  <span className="hidden lg:inline">Товары</span>
+                  <span className="lg:hidden">Тов.</span>
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  <span className="hidden sm:inline">Сумма</span>
+                  TRY
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  <span className="hidden sm:inline">Сумма</span>
+                  ₽
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden xl:table-cell">
+                  Создан
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Статус
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  <span className="hidden sm:inline">Действия</span>
+                  <span className="sm:hidden">Действ.</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {orders.slice(paginatedItems.startIndex, paginatedItems.endIndex).map(order => <Fragment key={order.id}>
+                      <tr className={`bg-white/80 dark:bg-slate-900/80 hover:shadow-lg transition-all duration-200 ${expandedOrders.includes(order.id) ? 'bg-accent/30' : ''}`}>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                          <div className="flex items-center space-x-2">
+                            <button onClick={() => toggleOrderExpand(order.id)} className="hover:bg-accent rounded p-1 transition-colors" aria-label={expandedOrders.includes(order.id) ? 'Свернуть' : 'Развернуть'}>
+                              {expandedOrders.includes(order.id) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </button>
+                            <span className="font-medium text-xs sm:text-sm">
+                              {new Date(order.date).toLocaleDateString('ru-RU')}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {order.id}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className="text-xs sm:text-sm font-mono">{order.tryRate}</span>
                         </td>
-                        <td className="px-6 py-4">
-                          <button onClick={() => toggleOrderExpand(order.id)} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-                            {expandedOrders.includes(order.id) ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
-                            {order.products.length} товаров
-                          </button>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden md:table-cell">
+                          <span className="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
+                            {order.products.length}
+                            <span className="hidden lg:inline ml-1">товаров</span>
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {order.totalTRY.toLocaleString('ru-RU')} TRY
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className="font-medium text-xs sm:text-sm">
+                            {order.totalTRY.toLocaleString('ru-RU')}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {order.tryRate}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className="font-medium text-xs sm:text-sm">
+                            {order.totalRUB.toLocaleString('ru-RU')}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {order.totalRUB.toLocaleString('ru-RU')} ₽
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden xl:table-cell">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(order.createdAt).toLocaleString('ru-RU')}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {order.status === 'received' ? <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Оприходован
-                            </span> : <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
-                              <Truck className="w-3 h-3 mr-1" />В пути
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          {order.status === 'received' ? <span className="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400">
+                              <CheckCircle className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">Оприходован</span>
+                              <span className="sm:hidden">OK</span>
+                            </span> : <span className="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400">
+                              <Truck className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline">В пути</span>
                             </span>}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <button onClick={() => handleReceiveOrder(order)} className="p-2 rounded-lg transition-all duration-300 group relative overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600" title="Оприходовать">
-                              <Package2 className="h-4 w-4 text-white" />
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            <button 
+                              onClick={() => handleReceiveOrder(order)} 
+                              className="p-1.5 sm:p-2 rounded-lg transition-all duration-300 group relative overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600" 
+                              title="Оприходовать"
+                              aria-label="Оприходовать заказ"
+                            >
+                              <Package2 className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                             </button>
-                            <button onClick={() => handleEditOrder(order)} className="p-2 rounded-lg transition-all duration-300 group relative overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600" title="Редактировать">
-                              <Edit2 className="h-4 w-4 text-white" />
+                            <button 
+                              onClick={() => handleEditOrder(order)} 
+                              className="p-1.5 sm:p-2 rounded-lg transition-all duration-300 group relative overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600" 
+                              title="Редактировать"
+                              aria-label="Редактировать заказ"
+                            >
+                              <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                             </button>
-                            <button onClick={() => {
-                        if (window.confirm('Вы уверены, что хотите удалить этот заказ?')) {
-                          handleDeleteOrder(order.id);
-                        }
-                      }} className="p-2 rounded-lg transition-all duration-300 group relative overflow-hidden bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600" title="Удалить">
-                              <Trash2 className="h-4 w-4 text-white" />
+                            <button 
+                              onClick={() => {
+                                if (window.confirm('Вы уверены, что хотите удалить этот заказ?')) {
+                                  handleDeleteOrder(order.id);
+                                }
+                              }} 
+                              className="p-1.5 sm:p-2 rounded-lg transition-all duration-300 group relative overflow-hidden bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600" 
+                              title="Удалить"
+                              aria-label="Удалить заказ"
+                            >
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                             </button>
                           </div>
                         </td>
@@ -584,24 +653,24 @@ export function Orders() {
                     opacity: 0,
                     height: 0
                   }}>
-                            <td colSpan={8} className="px-6 py-4 bg-accent/30">
+                            <td colSpan={8} className="px-3 sm:px-6 py-3 sm:py-4 bg-accent/30">
                               <div className="space-y-2">
-                                {order.products.map(product => <div key={product.id} className="flex items-center justify-between text-sm bg-white/50 dark:bg-slate-800/50 rounded-lg p-3">
+                                {order.products.map(product => <div key={product.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm bg-white/50 dark:bg-slate-800/50 rounded-lg p-2 sm:p-3 space-y-1 sm:space-y-0">
                                     <span className="font-medium flex items-center">
-                                      <Package2 className="w-4 h-4 mr-2 text-muted-foreground" />
+                                      <Package2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-muted-foreground" />
                                       {product.name}
                                     </span>
-                                    <div className="flex items-center space-x-6">
+                                    <div className="flex items-center space-x-3 sm:space-x-6 text-xs sm:text-sm">
                                       <span className="text-muted-foreground">
                                         {product.quantity} шт
                                       </span>
                                       <span className="text-muted-foreground">
                                         {product.costPriceTRY.toLocaleString('ru-RU')}{' '}
-                                        TRY
+                                        <span className="hidden sm:inline">TRY</span>
                                       </span>
                                       <span className="font-medium">
                                         {(product.quantity * product.costPriceTRY).toLocaleString('ru-RU')}{' '}
-                                        TRY
+                                        <span className="hidden sm:inline">TRY</span>
                                       </span>
                                     </div>
                                   </div>)}
@@ -610,33 +679,85 @@ export function Orders() {
                           </motion.tr>}
                       </AnimatePresence>
                     </Fragment>)}
-              </tbody>
-            </table>
-          </div>
+            </tbody>
+          </table>
         </div>
-        {/* Empty state */}
-        {orders.length === 0 && !loading && <div className="text-center py-12">
-            <Package2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground mb-2">
-              Нет заказов
-            </h3>
-            <p className="text-sm text-muted-foreground/70">
-              Создайте новый заказ, используя форму выше
-            </p>
-          </div>}
-        {/* Loading state */}
-        {loading && <div className="text-center py-12">
-            <motion.div animate={{
-          rotate: 360
-        }} transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: 'linear'
-        }} className="mx-auto w-12 h-12 text-emerald-500">
-              <Loader2 className="h-12 w-12" />
-            </motion.div>
-            <p className="mt-4 text-muted-foreground">Загрузка заказов...</p>
-          </div>}
+
+        {/* Mobile cards view for orders */}
+        <div className="sm:hidden p-4 space-y-3">
+          {orders.slice(paginatedItems.startIndex, paginatedItems.endIndex).map(order => (
+            <div key={order.id} className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-border rounded-xl p-3 space-y-3">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">
+                    {new Date(order.date).toLocaleDateString('ru-RU')}
+                  </span>
+                </div>
+                {order.status === 'received' ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    OK
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <Truck className="w-3 h-3 mr-1" />
+                    В пути
+                  </span>
+                )}
+              </div>
+              
+              {/* Content */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Курс:</span>
+                  <span className="font-mono">{order.tryRate}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Товаров:</span>
+                  <span className="font-medium">{order.products.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Сумма:</span>
+                  <div className="text-right">
+                    <div className="font-medium">{order.totalTRY.toLocaleString('ru-RU')} TRY</div>
+                    <div className="text-xs text-muted-foreground">{order.totalRUB.toLocaleString('ru-RU')} ₽</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-border/50">
+                <button 
+                  onClick={() => handleReceiveOrder(order)} 
+                  className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
+                  aria-label="Оприходовать"
+                >
+                  <Package2 className="h-4 w-4" />
+                </button>
+                <button 
+                  onClick={() => handleEditOrder(order)} 
+                  className="p-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                  aria-label="Редактировать"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Вы уверены, что хотите удалить этот заказ?')) {
+                      handleDeleteOrder(order.id);
+                    }
+                  }} 
+                  className="p-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                  aria-label="Удалить"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       {/* Improved pagination with loading state */}
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} isLoading={loading} />
@@ -934,7 +1055,8 @@ function ReceiveOrderModal({
       await onSave({
         products: formData.products.map(p => ({
           id: p.id,
-          quantity: p.actualQuantity
+          expectedQuantity: p.expectedQuantity,
+          actualQuantity: p.actualQuantity
         })),
         deliveryCost: formData.deliveryCost
       });

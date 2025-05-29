@@ -9,16 +9,20 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void;
 };
 const initialState: ThemeProviderState = {
-  theme: 'light',
+  theme: 'dark',
   setTheme: () => null
 };
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
-  defaultTheme = 'light',
+  defaultTheme = 'dark',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => localStorage.getItem('theme') as Theme || defaultTheme);
+  // Используем тему из localStorage, если она есть, иначе используем dark
+  const [theme, setTheme] = useState<Theme>(() => {
+    const savedTheme = localStorage.getItem('theme') as Theme;
+    return savedTheme || 'dark';
+  });
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');

@@ -1,17 +1,75 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Filter, Receipt, Edit2, Trash2, Calendar, Package, Truck, Megaphone, Users, MoreHorizontal } from 'lucide-react';
-import { AddExpenseModal } from '../components/AddExpenseModal';
+import { Plus, Search, Filter, Receipt, Edit2, Trash2, Calendar, Package, Truck, Megaphone, Users, MoreHorizontal, ShoppingBag, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { AddExpenseModal, type ExpenseType } from '../components/AddExpenseModal';
 import { ExpenseChart } from '../components/ExpenseChart';
-export interface Expense {
-  id: string;
-  date: string;
-  type: 'logistics' | 'advertising' | 'courier' | 'payroll' | 'other';
-  description: string;
-  amount: number;
-  productId?: string;
-  productName?: string;
-  createdAt: string;
+import { expensesApi, type Expense } from '../services/api';
+
+// Компонент для отображения товаров закупки
+function PurchaseItemsDisplay({ expense, onShowDetails }: { expense: Expense, onShowDetails?: () => void }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  if (!expense.purchaseItems || expense.purchaseItems.length === 0) {
+    return expense.productName ? (
+      <div className="flex items-center space-x-2">
+        <Package className="h-4 w-4 text-muted-foreground" />
+        <span>{expense.productName}</span>
+      </div>
+    ) : (
+      <span className="text-muted-foreground">—</span>
+    );
+  }
+
+  const itemsCount = expense.purchaseItems.length;
+  const displayLimit = 3;
+  const hasMoreItems = itemsCount > displayLimit;
+
+  return (
+    <div className="space-y-2">
+      {/* Краткая информация */}
+      <button
+        onClick={() => {
+          if (hasMoreItems && onShowDetails) {
+            onShowDetails();
+          } else {
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="flex items-center space-x-2 text-sm hover:text-primary transition-colors"
+      >
+        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium">{itemsCount} товар{itemsCount === 1 ? '' : itemsCount < 5 ? 'а' : 'ов'}</span>
+        {hasMoreItems && !onShowDetails && (
+          isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+        )}
+      </button>
+
+      {/* Список товаров (если мало товаров или развернуто) */}
+      {(!hasMoreItems || (isExpanded && !onShowDetails)) && (
+        <div className="space-y-1 ml-6 text-xs text-muted-foreground">
+          {expense.purchaseItems.slice(0, isExpanded ? undefined : displayLimit).map((item, index) => (
+            <div key={index} className="flex justify-between items-center">
+              <span className="truncate max-w-[200px]">{item.productName}</span>
+              <span className="ml-2 whitespace-nowrap">
+                {item.quantity} шт. × {item.unitCostTRY} TRY
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Кнопка "Показать все" для большого количества товаров */}
+      {hasMoreItems && onShowDetails && (
+        <button 
+          onClick={onShowDetails} 
+          className="text-xs text-blue-600 hover:text-blue-700 ml-6 underline"
+        >
+          Показать все товары
+        </button>
+      )}
+    </div>
+  );
 }
+
 export function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,82 +81,51 @@ export function Expenses() {
   });
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState<Expense | null>(null);
+  const [isPurchaseDetailsModalOpen, setIsPurchaseDetailsModalOpen] = useState(false);
   const expenseTypes = [{
-    id: 'logistics',
+    id: 'Логистика' as ExpenseType,
     name: 'Логистика',
     icon: Truck,
     color: 'blue'
   }, {
-    id: 'advertising',
+    id: 'Реклама' as ExpenseType,
     name: 'Реклама',
     icon: Megaphone,
     color: 'purple'
   }, {
-    id: 'courier',
-    name: 'Курьер',
-    icon: Package,
-    color: 'green'
-  }, {
-    id: 'payroll',
+    id: 'ФОТ' as ExpenseType,
     name: 'ФОТ',
     icon: Users,
     color: 'orange'
   }, {
-    id: 'other',
+    id: 'Закупка товара' as ExpenseType,
+    name: 'Закупка товара',
+    icon: ShoppingBag,
+    color: 'emerald'
+  }, {
+    id: 'Прочее' as ExpenseType,
     name: 'Прочее',
     icon: MoreHorizontal,
     color: 'gray'
   }];
   useEffect(() => {
-    // Загружаем расходы из localStorage
-    const loadExpenses = () => {
-      const savedExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
-      // Добавляем демо данные если их нет
-      if (savedExpenses.length === 0) {
-        const demoExpenses: Expense[] = [{
-          id: '1',
-          date: '2024-01-15',
-          type: 'logistics',
-          description: 'Доставка товаров из Турции',
-          amount: 15000,
-          createdAt: '2024-01-15T10:00:00Z'
-        }, {
-          id: '2',
-          date: '2024-01-18',
-          type: 'advertising',
-          description: 'Реклама в Яндекс.Директ',
-          amount: 25000,
-          createdAt: '2024-01-18T14:30:00Z'
-        }, {
-          id: '3',
-          date: '2024-01-20',
-          type: 'courier',
-          description: 'Курьерская доставка клиентам',
-          amount: 8500,
-          createdAt: '2024-01-20T09:15:00Z'
-        }, {
-          id: '4',
-          date: '2024-01-22',
-          type: 'payroll',
-          description: 'Зарплата сотрудников',
-          amount: 120000,
-          createdAt: '2024-01-22T16:00:00Z'
-        }, {
-          id: '5',
-          date: '2024-01-25',
-          type: 'other',
-          description: 'Офисные расходы',
-          amount: 12000,
-          createdAt: '2024-01-25T11:45:00Z'
-        }];
-        localStorage.setItem('expenses', JSON.stringify(demoExpenses));
-        setExpenses(demoExpenses);
-      } else {
+    // Загружаем расходы из API
+    const loadExpenses = async () => {
+      setLoading(true);
+      try {
+        const response = await expensesApi.getAll({ limit: 100 });
+        setExpenses(response.data);
+      } catch (error) {
+        console.error('Failed to load expenses:', error);
+        // В случае ошибки загружаем из localStorage
+        const savedExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
         setExpenses(savedExpenses);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    setTimeout(loadExpenses, 500);
+    loadExpenses();
   }, []);
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) || expense.productName?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -108,50 +135,52 @@ export function Expenses() {
   });
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const getTypeInfo = (type: string) => {
-    return expenseTypes.find(t => t.id === type) || expenseTypes[4];
+    return expenseTypes.find(t => t.id === type) || expenseTypes[3];
   };
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string, hasPurchaseItems: boolean = false) => {
     const typeInfo = getTypeInfo(type);
     const colors = {
       blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       purple: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      gray: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+      gray: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+      emerald: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
     };
+    
     return colors[typeInfo.color as keyof typeof colors];
   };
-  const handleAddExpense = (expense: Omit<Expense, 'id' | 'createdAt'>) => {
-    const newExpense: Expense = {
-      ...expense,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
-    const updatedExpenses = [...expenses, newExpense];
-    setExpenses(updatedExpenses);
-    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+  const handleAddExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>) => {
+    try {
+      const newExpense = await expensesApi.create(expense);
+      setExpenses(prev => [...prev, newExpense]);
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+    }
   };
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
     setIsAddExpenseModalOpen(true);
   };
-  const handleUpdateExpense = (updatedExpense: Omit<Expense, 'id' | 'createdAt'>) => {
+  const handleUpdateExpense = async (updatedExpense: Omit<Expense, 'id' | 'createdAt'>) => {
     if (!editingExpense) return;
-    const updated: Expense = {
-      ...updatedExpense,
-      id: editingExpense.id,
-      createdAt: editingExpense.createdAt
-    };
-    const updatedExpenses = expenses.map(e => e.id === editingExpense.id ? updated : e);
-    setExpenses(updatedExpenses);
-    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
-    setEditingExpense(null);
+    
+    try {
+      const updated = await expensesApi.update(editingExpense.id, updatedExpense);
+      setExpenses(prev => prev.map(e => e.id === editingExpense.id ? updated : e));
+      setEditingExpense(null);
+    } catch (error) {
+      console.error('Failed to update expense:', error);
+    }
   };
-  const handleDeleteExpense = (id: string) => {
+  const handleDeleteExpense = async (id: string) => {
     if (confirm('Вы уверены, что хотите удалить этот расход?')) {
-      const updatedExpenses = expenses.filter(e => e.id !== id);
-      setExpenses(updatedExpenses);
-      localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+      try {
+        await expensesApi.delete(id);
+        setExpenses(prev => prev.filter(e => e.id !== id));
+      } catch (error) {
+        console.error('Failed to delete expense:', error);
+      }
     }
   };
   const formatCurrency = (amount: number) => {
@@ -259,7 +288,7 @@ export function Expenses() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
                           <TypeIcon className="h-4 w-4" />
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(expense.type)}`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(expense.type, expense.purchaseItems && expense.purchaseItems.length > 0)}`}>
                             {typeInfo.name}
                           </span>
                         </div>
@@ -270,10 +299,13 @@ export function Expenses() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {expense.productName ? <div className="flex items-center space-x-2">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                            <span>{expense.productName}</span>
-                          </div> : <span className="text-muted-foreground">—</span>}
+                        <PurchaseItemsDisplay 
+                          expense={expense} 
+                          onShowDetails={expense.purchaseItems && expense.purchaseItems.length > 3 ? () => {
+                            setSelectedExpenseForDetails(expense);
+                            setIsPurchaseDetailsModalOpen(true);
+                          } : undefined}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
                         {formatCurrency(expense.amount)}
@@ -299,5 +331,102 @@ export function Expenses() {
       setIsAddExpenseModalOpen(false);
       setEditingExpense(null);
     }} onSave={editingExpense ? handleUpdateExpense : handleAddExpense} expense={editingExpense} expenseTypes={expenseTypes} />
+      
+      {/* Purchase Details Modal */}
+      {isPurchaseDetailsModalOpen && selectedExpenseForDetails && selectedExpenseForDetails.purchaseItems && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity" 
+              onClick={() => setIsPurchaseDetailsModalOpen(false)} 
+            />
+            <div className="relative bg-white dark:bg-slate-900 border border-border rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold">Детали закупки</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedExpenseForDetails.description}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsPurchaseDetailsModalOpen(false)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              {/* Summary Info */}
+              <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Дата</p>
+                    <p className="font-medium">{new Date(selectedExpenseForDetails.date).toLocaleDateString('ru-RU')}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Тип расхода</p>
+                    <p className="font-medium">{selectedExpenseForDetails.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Общая сумма</p>
+                    <p className="font-medium text-red-600">{formatCurrency(selectedExpenseForDetails.amount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Количество товаров</p>
+                    <p className="font-medium">{selectedExpenseForDetails.purchaseItems.length}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Products Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-2">Товар</th>
+                      <th className="text-right py-3 px-2">Количество</th>
+                      <th className="text-right py-3 px-2">Цена за ед. (TRY)</th>
+                      <th className="text-right py-3 px-2">Сумма (TRY)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedExpenseForDetails.purchaseItems.map((item, index) => {
+                      const totalTRY = item.quantity * item.unitCostTRY;
+                      return (
+                        <tr key={index} className="border-b border-border/50">
+                          <td className="py-3 px-2 font-medium">{item.productName}</td>
+                          <td className="text-right py-3 px-2">{item.quantity} шт.</td>
+                          <td className="text-right py-3 px-2">{item.unitCostTRY.toFixed(2)}</td>
+                          <td className="text-right py-3 px-2">{totalTRY.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-border font-semibold">
+                      <td colSpan={3} className="py-3 px-2 text-right">Итого в TRY:</td>
+                      <td className="text-right py-3 px-2">
+                        {selectedExpenseForDetails.purchaseItems
+                          .reduce((sum, item) => sum + item.quantity * item.unitCostTRY, 0)
+                          .toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              
+              {/* Close Button */}
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setIsPurchaseDetailsModalOpen(false)}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>;
 }
