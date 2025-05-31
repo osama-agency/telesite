@@ -4,17 +4,19 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, AlertCircle, RefreshCw, Filter, Calendar, Trash2, Package2, Users, ShoppingBag } from 'lucide-react';
 import { useCustomerOrders } from '../hooks/useCustomerOrders';
 import { DateRangePicker } from '../components/ui/DateRangePicker';
-import { Pagination } from '../components/ui/Pagination';
+import { ImprovedPagination } from '../components/ui/ImprovedPagination';
 import { TableSkeleton } from '../components/ui/TableSkeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorState } from '../components/ui/ErrorState';
 import { customerOrdersApi } from '../services/api';
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 20; // Оптимальное количество для UX (диапазон 15-25)
 
 export function CustomerOrders() {
   const [searchParams] = useSearchParams();
   const [page, setPage] = useState(1);
+  const [loadMoreMode, setLoadMoreMode] = useState(false);
+  const [allLoadedData, setAllLoadedData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFrom, setDateFrom] = useState<string | undefined>();
   const [dateTo, setDateTo] = useState<string | undefined>();
@@ -62,19 +64,54 @@ export function CustomerOrders() {
     statusFilter: statusFilter.length > 0 ? statusFilter : undefined
   });
 
-  // Больше не фильтруем данные на фронтенде
-  const filteredData = data;
+  // Обновляем данные для режима "Показать ещё"
+  React.useEffect(() => {
+    if (data?.data && !loadMoreMode) {
+      setAllLoadedData(data.data);
+    }
+  }, [data, loadMoreMode]);
 
   const handleDateRangeChange = (from?: string, to?: string) => {
     console.log('handleDateRangeChange called with:', { from, to });
     setDateFrom(from);
     setDateTo(to);
     setPage(1); // Reset to first page when filters change
+    setLoadMoreMode(false);
+    setAllLoadedData([]);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+    setLoadMoreMode(false);
+    setAllLoadedData([]);
   };
+
+  const handleLoadMore = async () => {
+    if (!data?.metadata.total || (page * ITEMS_PER_PAGE) >= data.metadata.total) return;
+    
+    if (!loadMoreMode) {
+      setLoadMoreMode(true);
+      setAllLoadedData(data?.data || []);
+    }
+    
+    const nextPage = page + 1;
+    setPage(nextPage);
+  };
+
+  // Обновляем allLoadedData когда получаем новые данные в режиме loadMore
+  React.useEffect(() => {
+    if (loadMoreMode && data?.data && page > 1) {
+      setAllLoadedData(prev => {
+        // Избегаем дублирования данных
+        const existingIds = new Set(prev.map(item => item.id));
+        const newItems = data.data.filter(item => !existingIds.has(item.id));
+        return [...prev, ...newItems];
+      });
+    }
+  }, [data, loadMoreMode, page]);
+
+  const displayData = loadMoreMode ? allLoadedData : data?.data || [];
+  const hasNextPage = data?.metadata.total ? (page * ITEMS_PER_PAGE) < data.metadata.total : false;
 
   const handleClearAllData = async () => {
     if (window.confirm('Вы уверены, что хотите удалить ВСЕ заказы клиентов? Это действие нельзя отменить.')) {
@@ -433,7 +470,7 @@ export function CustomerOrders() {
                     <TableSkeleton rows={10} columns={9} />
                   </td>
                 </tr>
-              ) : !data?.data?.length ? (
+              ) : !displayData?.length ? (
                 <tr>
                   <td colSpan={9} className="p-8">
                     <EmptyState
@@ -447,7 +484,7 @@ export function CustomerOrders() {
                   </td>
                 </tr>
               ) : (
-                data.data.map((order, index) => (
+                displayData.map((order, index) => (
                   <motion.tr 
                     key={order.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -512,7 +549,7 @@ export function CustomerOrders() {
                 ))}
               </div>
             </div>
-          ) : !data?.data?.length ? (
+          ) : !displayData?.length ? (
             <div className="p-8">
               <EmptyState
                 message={hasActiveFilters ? "Заказы не найдены. Попробуйте изменить критерии фильтрации" : "Нет данных в таблице"}
@@ -525,7 +562,7 @@ export function CustomerOrders() {
             </div>
           ) : (
             <div className="p-4 space-y-3">
-              {data.data.map((order, index) => (
+              {displayData.map((order, index) => (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -594,21 +631,24 @@ export function CustomerOrders() {
           )}
         </div>
 
-        {/* Pagination */}
-        {data && data.data && data.data.length > 0 && data.metadata.total > ITEMS_PER_PAGE && (
-          <div className="border-t border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-4 bg-slate-50 dark:bg-slate-800/50">
-            <Pagination
-              currentPage={page}
-              totalPages={Math.ceil(data.metadata.total / ITEMS_PER_PAGE)}
-              onPageChange={handlePageChange}
-              loading={isRefreshing}
-            />
-          </div>
+        {/* Улучшенная пагинация */}
+        {data && data.data && data.data.length > 0 && (
+          <ImprovedPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={data.metadata.total}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+            onLoadMore={handleLoadMore}
+            loading={loading || isRefreshing}
+            showLoadMore={true}
+            hasNextPage={hasNextPage}
+          />
         )}
       </div>
 
       {/* Stats Footer */}
-      {data && data.data && data.data.length > 0 && (
+      {data && displayData && displayData.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -617,9 +657,11 @@ export function CustomerOrders() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-4 sm:p-6 text-center group hover:shadow-md dark:hover:shadow-lg transition-all duration-200">
             <Package2 className="h-8 w-8 mx-auto text-purple-600 dark:text-purple-400 mb-3 group-hover:scale-110 transition-transform duration-200" />
             <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-              {data.metadata.total}
+              {loadMoreMode ? allLoadedData.length : data?.metadata.total || 0}
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400 mt-1 font-medium">Отфильтрованных заказов</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400 mt-1 font-medium">
+              {loadMoreMode ? 'Загруженных заказов' : 'Отфильтрованных заказов'}
+            </div>
           </div>
           
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-4 sm:p-6 text-center group hover:shadow-md dark:hover:shadow-lg transition-all duration-200">

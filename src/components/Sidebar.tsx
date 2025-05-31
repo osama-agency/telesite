@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Users, Receipt, ShoppingCart, BarChart3, PlayCircle, AlertTriangle, Eye, Database, Lock } from 'lucide-react';
+import { Package, Users, Receipt, ShoppingCart, BarChart3, PlayCircle, AlertTriangle, Eye, Database, Lock, LogOut, User } from 'lucide-react';
 import { useResponsive } from '../hooks/useResponsive';
+import AccountMenuDropdown from './ui/dropdown/AccountMenuDropdown';
+import { useTheme } from './ThemeProvider';
 
 interface MenuItem {
   name: string;
@@ -51,28 +53,32 @@ const menuItems: MenuItem[] = [
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useTheme();
   
-  // Initialize demo mode state
+  // Initialize demo mode state and user info
   useEffect(() => {
-    // Check localStorage for demo mode state
-    const savedDemoMode = localStorage.getItem('isDemoMode') === 'true';
-    setIsDemoMode(savedDemoMode);
-    window.isDemoMode = savedDemoMode;
+    // Check user role and email from localStorage
+    const role = localStorage.getItem('userRole');
+    const email = localStorage.getItem('userEmail');
+    setUserRole(role);
+    setUserEmail(email);
+    setIsDemoMode(role === 'demo');
+    window.isDemoMode = role === 'demo';
   }, []);
   
-  // Handle demo mode toggle
-  const toggleDemoMode = () => {
-    const newDemoMode = !isDemoMode;
-    setIsDemoMode(newDemoMode);
-    window.isDemoMode = newDemoMode;
-    localStorage.setItem('isDemoMode', newDemoMode.toString());
-    // Trigger a page reload to apply demo mode changes
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('rememberMe');
+    window.isDemoMode = false;
+    navigate('/login');
   };
   
   const sidebarVariants = {
@@ -231,155 +237,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             })}
           </nav>
           
-          {/* Bottom Section - Demo Mode */}
+          {/* Bottom Section - User Info */}
           <div className="p-2 sm:p-3 md:p-4 border-t border-gray-200/50 dark:border-slate-800/50">
-            {/* Demo Mode Button */}
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              onClick={toggleDemoMode}
-              className={`
-                w-full mb-2 sm:mb-2.5 md:mb-3 
-                rounded-lg sm:rounded-lg md:rounded-xl 
-                p-2.5 sm:p-3 md:p-4 
-                border backdrop-blur-sm shadow-lg 
-                transition-all duration-300 
-                hover:scale-[1.01] sm:hover:scale-[1.015] md:hover:scale-[1.02] 
-                active:scale-[0.99] sm:active:scale-[0.985] md:active:scale-[0.98] 
-                relative overflow-hidden 
-                ${isDemoMode
-                  ? 'bg-gradient-to-br from-yellow-400/90 to-amber-500/80 hover:from-yellow-400 hover:to-amber-500 border-yellow-300/50 shadow-yellow-500/25'
-                  : 'bg-gradient-to-br from-purple-600/60 to-pink-600/40 hover:from-purple-600/80 hover:to-pink-600/60 border-purple-500/20'}
-              `}
-            >
-              {/* Background Pattern */}
-              {isDemoMode && (
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-amber-500/10">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,0,0.1),transparent_50%)]" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,193,7,0.1),transparent_50%)]" />
-                </div>
-              )}
-              
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
-                  {isDemoMode ? (
-                    <div className="relative flex-shrink-0">
-                      <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-yellow-300 to-amber-400 flex items-center justify-center shadow-lg">
-                        <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-amber-900" />
-                      </div>
-                      <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 rounded-full bg-red-500 border-2 border-white flex items-center justify-center">
-                        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-pulse" />
-                      </div>
-                      <div className="absolute inset-0 rounded-full bg-yellow-400/50 animate-ping" />
-                    </div>
-                  ) : (
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                      <PlayCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-white" />
-                    </div>
-                  )}
-                  
-                  <div className="min-w-0 text-left flex-1 overflow-hidden">
-                    {isDemoMode ? (
-                      <>
-                        <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                          <div className="text-xs sm:text-sm md:text-sm font-bold text-amber-900 truncate">
-                            ДЕМО РЕЖИМ АКТИВЕН
-                          </div>
-                          <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-bold bg-red-500 text-white rounded-full border border-red-400 animate-pulse whitespace-nowrap">
-                            DEMO
-                          </span>
-                        </div>
-                        <div className="text-[10px] sm:text-xs text-amber-800 font-medium break-words">
-                          Тестовые данные • Изменения не сохраняются
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-xs sm:text-sm font-semibold text-white truncate">
-                          Демо режим
-                        </div>
-                        <div className="text-[10px] sm:text-xs text-purple-200 break-words">
-                          Просмотр с тестовыми данными
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  
-                  {isDemoMode && (
-                    <div className="text-[10px] sm:text-xs text-amber-800 font-bold bg-amber-200/30 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md whitespace-nowrap">
-                      ✕ Выйти
-                    </div>
-                  )}
-                </div>
-                
-                {/* Enhanced info when in demo mode */}
-                {isDemoMode && (
-                  <div className="mt-2 sm:mt-2.5 md:mt-3 pt-2 sm:pt-2.5 md:pt-3 border-t border-amber-400/30">
-                    <div className="grid grid-cols-1 gap-1.5 sm:gap-2">
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-amber-800">
-                        <Database className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
-                        <span className="font-medium break-words">12 тестовых товаров загружено</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-amber-800">
-                        <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
-                        <span className="font-medium break-words">Данные защищены от изменений</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-amber-800">
-                        <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
-                        <span className="font-medium break-words">Полная функциональность доступна</span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-1.5 sm:mt-2 p-1.5 sm:p-2 bg-amber-100/20 rounded-md sm:rounded-lg border border-amber-300/30">
-                      <div className="text-[10px] sm:text-xs text-amber-900 font-medium text-center">
-                        💡 Это демонстрационная версия
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.button>
-            
-            {/* Status Indicator */}
+            {/* User Profile with Dropdown */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`
-                rounded-lg sm:rounded-lg md:rounded-xl 
-                p-2 sm:p-2.5 md:p-3 
-                border backdrop-blur-sm shadow-sm 
-                ${isDemoMode 
-                  ? 'bg-gradient-to-br from-amber-100/20 to-yellow-200/10 border-amber-200/30' 
-                  : 'bg-gradient-to-br from-gray-100/50 to-gray-200/20 dark:from-slate-800/60 dark:to-slate-700/40 border-gray-200/30 dark:border-slate-700/30'}
-              `}
+              className="mb-2 sm:mb-2.5 md:mb-3 rounded-lg sm:rounded-lg md:rounded-xl p-2 sm:p-2.5 md:p-3 bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200/30 dark:border-slate-700/30"
             >
               <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
-                <div className={`
-                  w-2 h-2 sm:w-2.5 sm:h-2.5 
-                  rounded-full flex-shrink-0 
-                  ${isDemoMode 
-                    ? 'bg-amber-500 animate-pulse shadow-amber-500/50 shadow-lg' 
-                    : 'bg-emerald-500 animate-pulse'}
-                `} />
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <div className={`
-                    text-xs sm:text-sm font-semibold truncate
-                    ${isDemoMode ? 'text-amber-900' : 'text-gray-900 dark:text-white'}
-                  `}>
-                    {isDemoMode ? 'Демо-среда активна' : 'Система активна'}
+                <AccountMenuDropdown
+                  userEmail={userEmail}
+                  userRole={userRole}
+                  isDemoMode={isDemoMode}
+                  theme={theme}
+                  setTheme={setTheme}
+                  onLogout={handleLogout}
+                >
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <div className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {userEmail || 'Пользователь'}
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 dark:text-slate-400 flex items-center gap-1">
+                      {isDemoMode ? (
+                        <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded font-medium">
+                          Демо режим
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 bg-green-500/20 text-green-700 dark:text-green-400 rounded font-medium">
+                          Администратор
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className={`
-                    text-[10px] sm:text-xs break-words
-                    ${isDemoMode ? 'text-amber-700' : 'text-gray-600 dark:text-slate-400'}
-                  `}>
-                    {isDemoMode ? 'Безопасный режим просмотра' : 'Все сервисы работают'}
-                  </div>
-                </div>
-                {isDemoMode && (
-                  <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-500/20 text-amber-800 text-[10px] sm:text-xs font-bold rounded border border-amber-400/50 whitespace-nowrap">
-                    TEST
-                  </div>
-                )}
+                </AccountMenuDropdown>
               </div>
             </motion.div>
           </div>

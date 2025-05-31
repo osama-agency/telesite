@@ -175,6 +175,10 @@ module.exports = {
           "0%": { backgroundPosition: "-200px 0" },
           "100%": { backgroundPosition: "calc(200px + 100%) 0" },
         },
+        'gradient-x': {
+          '0%, 100%': { 'background-position': '0% 50%' },
+          '50%': { 'background-position': '100% 50%' },
+        },
       },
       
       animation: {
@@ -189,6 +193,7 @@ module.exports = {
         "bounce-gentle": "bounce-gentle 2s ease-in-out infinite",
         "scale-in": "scale-in 0.2s ease-out",
         "shimmer": "shimmer 1.5s ease-in-out infinite",
+        'gradient-x': 'gradient-x 4s ease-in-out infinite',
       },
       
       // Enhanced typography
