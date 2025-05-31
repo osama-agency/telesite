@@ -21,9 +21,10 @@ const port = process.env.PORT || 3000;
 // Получаем подключение к MongoDB
 connectDB();
 
-// Временно отключаем синхронизацию с внешним API из-за проблем с токеном
-/*
-// Re-sync orders on startup with new status mapping
+// Запускаем задачи по расписанию
+export const schedulerService = new SchedulerService();
+
+// Синхронизация с внешним API при старте
 (async () => {
   try {
     await mongoose.connection.asPromise();
@@ -32,15 +33,16 @@ connectDB();
     console.log('Re-syncing customer orders with status mapping...');
     await customerOrderService.getAllOrders();
     console.log('Customer orders re-synced successfully');
+    
+    // Запускаем scheduled tasks после первоначальной синхронизации
+    schedulerService.startScheduledTasks();
+    console.log('Scheduler started - orders will auto-update every 10 minutes');
   } catch (error) {
     console.error('Failed to re-sync customer orders:', error);
+    // Запускаем scheduler даже если первоначальная синхронизация не удалась
+    schedulerService.startScheduledTasks();
   }
 })();
-*/
-
-// Запускаем задачи по расписанию
-const schedulerService = new SchedulerService();
-schedulerService.startScheduledTasks();
 
 // Middleware
 app.use(cors());

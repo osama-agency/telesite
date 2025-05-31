@@ -11,8 +11,7 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Package,
-  Box
+  Package
 } from 'lucide-react';
 import { StatCard } from '../components/ui/StatCard';
 import { LoadingState } from '../components/ui/LoadingState';
@@ -20,13 +19,24 @@ import { ErrorState } from '../components/ui/ErrorState';
 import { 
   ChartWrapper, 
   AnimatedAreaChart, 
-  AnimatedBarChart, 
   AnimatedPieChart,
   AnimatedLineChart,
-  LeaderboardChart
+  LeaderboardChart,
+  type ChartWrapperProps,
+  type AnimatedAreaChartProps,
+  type AnimatedLineChartProps,
+  type AnimatedPieChartProps,
+  type LeaderboardChartProps
 } from '../components/charts';
 import { useResponsive } from '../hooks/useResponsive';
 import axios from 'axios';
+import { EmptyState } from '../components/ui/EmptyState';
+
+// Demo data import for demo mode
+import { demoAnalytics, demoOrders, demoExpenses } from '../data/demoData';
+
+// Check if we're in demo mode
+const isDemoMode = () => typeof window !== 'undefined' && window.isDemoMode === true;
 
 interface PeriodFilter {
   label: string;
@@ -54,9 +64,24 @@ interface AnalyticsData {
   products: any[];
 }
 
+interface SummaryMetrics {
+  totalRevenue: number;
+  totalProfit: number;
+  totalExpenses: any;
+  profitMargin: number;
+  ordersByStatus: any;
+  totalOrders: number;
+  uniqueCustomers: number;
+  revenueTrend: { value: number; isPositive: boolean };
+  profitTrend: { value: number; isPositive: boolean };
+  ordersTrend: { value: number; isPositive: boolean };
+  customersTrend: { value: number; isPositive: boolean };
+  ordersByDay: Array<{ date: string; orders: number }>;
+}
+
 export function Analytics() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('30d');
-  const { isMobile, width } = useResponsive();
+  const { isMobile } = useResponsive();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     profit: [],
     purchases: [],
@@ -127,6 +152,101 @@ export function Analytics() {
       setLoading(true);
       setError(null);
       
+      // Check if we're in demo mode
+      if (isDemoMode()) {
+        // Use demo data
+        const { from, to } = getDateRange(selectedPeriod);
+        
+        // Filter demo orders by selected period
+        const filteredOrders = demoOrders.filter((order: any) => {
+          const orderDate = new Date(order.orderDate);
+          const fromDate = new Date(from);
+          const toDate = new Date(to);
+          return orderDate >= fromDate && orderDate <= toDate;
+        });
+
+        // Filter demo expenses by selected period
+        const filteredExpenses = demoExpenses.filter((expense: any) => {
+          const expenseDate = new Date(expense.date);
+          const fromDate = new Date(from);
+          const toDate = new Date(to);
+          return expenseDate >= fromDate && expenseDate <= toDate;
+        });
+        
+        // Calculate top customers with orders
+        const customerStats = filteredOrders.reduce((acc: any, order: any) => {
+          const total = order.totalAmount;
+          const cleanName = order.customerName;
+          if (!acc[cleanName]) {
+            acc[cleanName] = { name: cleanName, total: 0, orders: 0 };
+          }
+          acc[cleanName].total += total;
+          acc[cleanName].orders += 1;
+          return acc;
+        }, {});
+        
+        const topCustomers = Object.values(customerStats)
+          .sort((a: any, b: any) => b.total - a.total)
+          .slice(0, 5);
+
+        // Mock cities for demo
+        const topCities = [
+          { name: 'Москва', total: 1850000, orders: 25 },
+          { name: 'Санкт-Петербург', total: 850000, orders: 12 },
+          { name: 'Казань', total: 450000, orders: 8 }
+        ];
+
+        // Calculate top products from orders
+        const productStats = filteredOrders.reduce((acc: any, order: any) => {
+          order.products.forEach((product: any) => {
+            if (!acc[product.name]) {
+              acc[product.name] = { name: product.name, totalQuantity: 0, orders: 0 };
+            }
+            acc[product.name].totalQuantity += product.quantity;
+            acc[product.name].orders += 1;
+          });
+          return acc;
+        }, {});
+
+        const period = periodFilters.find(p => p.value === selectedPeriod);
+        const daysInPeriod = period ? period.days : 30;
+        
+        const topProducts = Object.values(productStats)
+          .map((product: any) => ({
+            name: product.name,
+            avgDailyConsumption: product.totalQuantity / daysInPeriod,
+            totalQuantity: product.totalQuantity,
+            orders: product.orders
+          }))
+          .sort((a: any, b: any) => b.avgDailyConsumption - a.avgDailyConsumption)
+          .slice(0, 5);
+
+        setAnalyticsData({
+          profit: demoAnalytics.charts.dailyRevenue.map(d => ({
+            period: d.date,
+            revenue: d.revenue,
+            netProfit: d.revenue * 0.3 // 30% profit margin
+          })),
+          purchases: [],
+          expenses: filteredExpenses,
+          orders: filteredOrders.map((order: any) => ({
+            ...order,
+            paymentDate: order.orderDate + ' 12:00:00',
+            address: 'Москва, ул. Примерная, д. 1',
+            price: order.totalAmount / order.products.reduce((sum: number, p: any) => sum + p.quantity, 0),
+            quantity: order.products.reduce((sum: number, p: any) => sum + p.quantity, 0),
+            productName: order.products[0]?.name || 'Товар'
+          })),
+          customers: topCustomers,
+          cities: topCities,
+          products: topProducts
+        });
+        
+        setLoading(false);
+        return;
+      }
+      
+      // Original API calls for non-demo mode
       const { from, to } = getDateRange(selectedPeriod);
       
       const [profitRes, purchasesRes, expensesRes, customerOrdersRes] = await Promise.all([
@@ -248,31 +368,48 @@ export function Analytics() {
     const totalExpenses = analyticsData.expenses.reduce((sum: number, expense: any) => {
       return sum + (expense.amountRUB || 0);
     }, 0);
-    
-    // Net profit = Revenue - Expenses
+
+    // Calculate total profit
     const totalProfit = totalRevenue - totalExpenses;
-    
-    // Profit margin as percentage
+
+    // Calculate profit margin
     const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-    
-    // Count unique orders (not individual items)
-    const uniqueOrderIds = new Set(analyticsData.orders.map((order: any) => order.id));
-    const totalOrders = uniqueOrderIds.size;
-    
-    // Group orders by status
-    const ordersByStatus = analyticsData.orders.reduce((acc: any, order: any) => {
-      acc[order.status] = (acc[order.status] || 0) + 1;
+
+    // Count unique customers
+    const uniqueCustomers = new Set(analyticsData.orders.map((order: any) => order.customerName)).size;
+
+    // Calculate trends (mock data for now)
+    const revenueTrend = { value: 12.5, isPositive: true };
+    const profitTrend = { value: 8.2, isPositive: true };
+    const ordersTrend = { value: 15.3, isPositive: true };
+    const customersTrend = { value: 5.7, isPositive: true };
+
+    // Group orders by day
+    const ordersByDay = analyticsData.orders.reduce((acc: any[], order: any) => {
+      const date = order.paymentDate.split(' ')[0];
+      const existingDay = acc.find(day => day.date === date);
+      if (existingDay) {
+        existingDay.orders += 1;
+      } else {
+        acc.push({ date, orders: 1 });
+      }
       return acc;
-    }, {});
+    }, []).sort((a, b) => a.date.localeCompare(b.date));
 
     return {
       totalRevenue,
       totalProfit,
       totalExpenses,
       profitMargin,
-      ordersByStatus,
-      totalOrders
-    };
+      ordersByStatus: {},
+      totalOrders: analyticsData.orders.length,
+      uniqueCustomers,
+      revenueTrend,
+      profitTrend,
+      ordersTrend,
+      customersTrend,
+      ordersByDay
+    } as SummaryMetrics;
   }, [analyticsData]);
 
   // Prepare chart data
@@ -358,305 +495,290 @@ export function Analytics() {
     navigate(`/customer-orders?search=${encodeURIComponent(product.name)}`);
   };
 
-  if (loading) return <LoadingState />;
+  if (loading) return <LoadingState variant="sparkle" size="lg" message="Загружаем аналитику..." />;
   if (error) return <ErrorState message={error} />;
 
   return (
-    <div className="analytics-page min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {/* Container with responsive padding - full width on screens 1400px+ */}
-      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-0 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-6">
-        
-        {/* Content wrapper with padding only for very large screens */}
-        <div className="2xl:px-6 3xl:px-8">
-          {/* Header Section - Improved typography and spacing */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-4 sm:space-y-6"
-          >
-            {/* Main Title with responsive typography using clamp() */}
-            <div className="text-center sm:text-left">
-              <h1 className="text-responsive-header font-bold text-slate-900 dark:text-white bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent">
-                Аналитика товаров
-              </h1>
-              <p className="text-responsive-body text-muted-foreground mt-2 sm:mt-3 max-w-3xl mx-auto sm:mx-0 leading-relaxed">
-                Комплексная аналитика продаж, закупок и прибыльности бизнеса с современными интерактивными графиками
-              </p>
-            </div>
-            
-            {/* Period Filter - Enhanced mobile experience */}
-            <div className="period-filter-container">
-              <div className="flex gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide pb-2 snap-x snap-mandatory">
-                {periodFilters.map((period, index) => (
-                  <motion.button
-                    key={period.value}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => setSelectedPeriod(period.value)}
-                    className={`
-                      period-btn flex-shrink-0 snap-start touch-target
-                      px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl
-                      text-sm sm:text-base font-medium whitespace-nowrap
-                      transition-all duration-300 ease-out
-                      ${selectedPeriod === period.value
-                        ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105 ring-2 ring-primary/20'
-                        : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-border/50 hover:border-primary/30 hover:shadow-md'
-                      }
-                      focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2
-                    `}
-                  >
-                    {period.label}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Key Metrics Grid - Enhanced responsive grid with better spacing */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="metrics-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-4 lg:gap-5 xl:gap-6"
-          >
-            <StatCard
-              title="Общий доход"
-              value={`₽${summaryMetrics.totalRevenue.toLocaleString()}`}
-              trend={{ value: 12.5, isPositive: true }}
-              icon={DollarSign}
-              color="success"
-              compact={isMobile}
-              delay={0}
-            />
-            <StatCard
-              title="Чистая прибыль"
-              value={`₽${summaryMetrics.totalProfit.toLocaleString()}`}
-              trend={{ value: 8.2, isPositive: true }}
-              icon={TrendingUp}
-              color="info"
-              compact={isMobile}
-              delay={0.1}
-            />
-            <StatCard
-              title="Рентабельность"
-              value={`${summaryMetrics.profitMargin.toFixed(1)}%`}
-              trend={{ value: 2.1, isPositive: false }}
-              icon={BarChart3}
-              color="primary"
-              compact={isMobile}
-              delay={0.2}
-            />
-            <StatCard
-              title="Всего заказов"
-              value={summaryMetrics.totalOrders.toString()}
-              trend={{ value: 15.3, isPositive: true }}
-              icon={ShoppingCart}
-              color="warning"
-              compact={isMobile}
-              delay={0.3}
-            />
-          </motion.div>
-
-          {/* Charts Grid - Reduced gaps for better spacing */}
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="charts-grid grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-4 xl:gap-5 2xl:gap-6"
-          >
-            {/* Revenue and Profit Trend - Full width chart */}
-            <div className="chart-main lg:col-span-2">
-              <ChartWrapper
-                title="Динамика доходов и прибыли"
-                subtitle="По дням за выбранный период"
-                icon={
-                  <div className="chart-icon p-2 sm:p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-                    <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                }
-                delay={0}
-                className="chart-wrapper"
-              >
-                <div className="chart-container overflow-x-auto">
-                  <AnimatedAreaChart
-                    data={revenueChartData}
-                    areas={[
-                      {
-                        dataKey: 'revenue',
-                        stroke: '#3B82F6',
-                        fill: 'url(#colorRevenue)',
-                        name: 'Доход',
-                        stackId: '1'
-                      },
-                      {
-                        dataKey: 'profit',
-                        stroke: '#10B981',
-                        fill: 'url(#colorProfit)',
-                        name: 'Прибыль',
-                        stackId: '2'
-                      }
-                    ]}
-                    xDataKey="date"
-                    height={width < 640 ? 280 : width < 1024 ? 320 : width < 1920 ? 380 : 420}
-                    formatXAxis={(value) => {
-                      const date = new Date(value);
-                      if (width < 640) {
-                        // Ultra short format for mobile: "5/12"
-                        return `${date.getDate()}/${date.getMonth() + 1}`;
-                      } else if (width < 1024) {
-                        // Short format for tablet: "5 дек"
-                        const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-                        return `${date.getDate()} ${months[date.getMonth()]}`;
-                      }
-                      // Full format for desktop
-                      const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-                      return `${date.getDate()} ${months[date.getMonth()]}`;
-                    }}
-                    gradients={[
-                      {
-                        id: 'colorRevenue',
-                        startColor: '#3B82F6',
-                        endColor: '#3B82F6',
-                        startOpacity: 0.4,
-                        endOpacity: 0.05
-                      },
-                      {
-                        id: 'colorProfit',
-                        startColor: '#10B981',
-                        endColor: '#10B981',
-                        startOpacity: 0.4,
-                        endOpacity: 0.05
-                      }
-                    ]}
-                  />
-                </div>
-              </ChartWrapper>
-            </div>
-
-            {/* Secondary Charts - Responsive grid layout */}
-            <ChartWrapper
-              title="Статусы заказов"
-              subtitle="Распределение по статусам"
-              icon={
-                <div className="chart-icon p-2 sm:p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
-                  <PieChart className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              }
-              delay={0.1}
-              className="chart-wrapper"
-            >
-              <div className="chart-container">
-                <AnimatedPieChart
-                  data={orderStatusData}
-                  dataKey="value"
-                  nameKey="name"
-                  height={width < 640 ? 300 : width < 1024 ? 340 : width < 1920 ? 380 : 420}
-                  outerRadius={width < 640 ? 85 : width < 1024 ? 100 : width < 1920 ? 120 : 140}
-                  formatTooltip={(value) => value.toLocaleString()}
-                />
-              </div>
-            </ChartWrapper>
-
-            <ChartWrapper
-              title="ТОП-5 покупателей"
-              subtitle="По объему покупок"
-              icon={
-                <div className="chart-icon p-2 sm:p-2.5 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-lg">
-                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              }
-              delay={0.2}
-              className="chart-wrapper"
-            >
-              <div className="chart-container">
-                <LeaderboardChart
-                  data={analyticsData.customers.map(c => ({ 
-                    name: c.name, 
-                    value: c.total 
-                  }))}
-                  formatValue={(value) => `₽${value.toLocaleString()}`}
-                  onItemClick={handleCustomerClick}
-                />
-              </div>
-            </ChartWrapper>
-
-            <ChartWrapper
-              title="ТОП-3 города"
-              subtitle="По объему продаж"
-              icon={
-                <div className="chart-icon p-2 sm:p-2.5 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-lg">
-                  <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              }
-              delay={0.3}
-              className="chart-wrapper"
-            >
-              <div className="chart-container">
-                <LeaderboardChart
-                  data={analyticsData.cities.map(c => ({ 
-                    name: c.name, 
-                    value: c.total 
-                  }))}
-                  formatValue={(value) => `₽${value.toLocaleString()}`}
-                  onItemClick={handleCityClick}
-                />
-              </div>
-            </ChartWrapper>
-
-            <ChartWrapper
-              title="ТОП-5 товаров"
-              subtitle="По среднему потреблению в день"
-              icon={
-                <div className="chart-icon p-2 sm:p-2.5 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-xl shadow-lg">
-                  <Box className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-              }
-              delay={0.35}
-              className="chart-wrapper"
-            >
-              <div className="chart-container">
-                <LeaderboardChart
-                  data={analyticsData.products.map(p => ({ 
-                    name: p.name, 
-                    value: p.avgDailyConsumption 
-                  }))}
-                  formatValue={(value) => `${value.toFixed(1)} шт/день`}
-                  onItemClick={handleProductClick}
-                />
-              </div>
-            </ChartWrapper>
-
-            {/* Expenses Analysis - Full width bottom chart */}
-            <div className="chart-main lg:col-span-2">
-              <ChartWrapper
-                title="Структура расходов"
-                subtitle="Расходы по категориям за период"
-                icon={
-                  <div className="chart-icon p-2 sm:p-2.5 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl shadow-lg">
-                    <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                }
-                delay={0.4}
-                className="chart-wrapper"
-              >
-                <div className="chart-container overflow-hidden">
-                  <AnimatedPieChart
-                    data={expensesChartData}
-                    dataKey="value"
-                    nameKey="name"
-                    height={width < 640 ? 350 : width < 1024 ? 400 : width < 1920 ? 450 : 500}
-                    outerRadius={width < 640 ? 110 : width < 1024 ? 130 : width < 1920 ? 150 : 170}
-                    showLabel={true}
-                    formatLabel={(value, percentage) => width < 640 ? `${percentage.toFixed(0)}%` : `${percentage.toFixed(1)}%`}
-                  />
-                </div>
-              </ChartWrapper>
-            </div>
-          </motion.div>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="analytics-container space-y-6 lg:space-y-8"
+    >
+      {/* Header */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
+        <div>
+          <h1 className="text-responsive-header font-bold gradient-text">
+            Аналитика
+          </h1>
+          <p className="text-responsive-body text-muted-foreground mt-2">
+            Детальный анализ продаж, прибыли и эффективности
+          </p>
         </div>
-      </div>
-    </div>
+
+        {/* Period filter */}
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="period-filter-container"
+        >
+          <div className="flex flex-wrap gap-2 p-1 bg-muted/30 rounded-xl border border-border/50">
+            {periodFilters.map((period) => (
+              <motion.button
+                key={period.value}
+                onClick={() => setSelectedPeriod(period.value)}
+                className={`
+                  px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg
+                  transition-all duration-200 whitespace-nowrap period-btn
+                  ${selectedPeriod === period.value
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }
+                `}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {period.label}
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Metrics Grid */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 metrics-grid"
+      >
+        <StatCard
+          title="Общая выручка"
+          value={summaryMetrics.totalRevenue}
+          change={summaryMetrics.revenueTrend}
+          icon={DollarSign}
+          variant="gradient"
+          color="success"
+          suffix="₽"
+          description="За выбранный период"
+          sparkline={revenueChartData.slice(-7).map((d: any) => d.revenue)}
+        />
+        
+        <StatCard
+          title="Чистая прибыль"
+          value={summaryMetrics.totalProfit}
+          change={summaryMetrics.profitTrend}
+          icon={TrendingUp}
+          variant="default"
+          color="primary"
+          suffix="₽"
+          description="После вычета расходов"
+        />
+        
+        <StatCard
+          title="Всего заказов"
+          value={summaryMetrics.totalOrders}
+          change={summaryMetrics.ordersTrend}
+          icon={ShoppingCart}
+          variant="outline"
+          color="info"
+          description="Обработанных заказов"
+        />
+        
+        <StatCard
+          title="Уникальных клиентов"
+          value={summaryMetrics.uniqueCustomers}
+          change={summaryMetrics.customersTrend}
+          icon={Users}
+          variant="minimal"
+          color="warning"
+          description="Активных покупателей"
+        />
+      </motion.div>
+
+      {/* Charts Grid */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 charts-grid"
+      >
+        {/* Revenue Chart */}
+        <ChartWrapper
+          title="Динамика доходов"
+          icon={<BarChart3 className="h-5 w-5" />}
+          className="lg:col-span-2"
+        >
+          {revenueChartData.length > 0 ? (
+            <AnimatedAreaChart
+              data={revenueChartData}
+              height={300}
+              keys={['revenue', 'profit']}
+              index="date"
+              colors={['#3B82F6', '#10B981']}
+              legends={['Выручка', 'Прибыль']}
+            />
+          ) : (
+            <EmptyState
+              type="analytics"
+              message="Нет данных о доходах"
+              description="Данные появятся после первых продаж"
+              size="sm"
+              showIllustration={false}
+            />
+          )}
+        </ChartWrapper>
+
+        {/* Expenses Chart */}
+        <ChartWrapper
+          title="Структура расходов"
+          icon={<PieChart className="h-5 w-5" />}
+        >
+          {expensesChartData.some((item: any) => item.value > 0) ? (
+            <AnimatedPieChart
+              data={expensesChartData.map((expense: any) => ({
+                id: expense.name,
+                label: expense.name,
+                value: expense.value
+              }))}
+              colors={COLORS}
+              height={250}
+            />
+          ) : (
+            <EmptyState
+              type="analytics"
+              message="Нет данных о расходах"
+              description="Добавьте расходы в соответствующем разделе"
+              size="sm"
+              action={{
+                label: "Добавить расход",
+                onClick: () => navigate('/expenses')
+              }}
+            />
+          )}
+        </ChartWrapper>
+
+        {/* Top Customers */}
+        <ChartWrapper
+          title="Топ клиенты"
+          icon={<Users className="h-5 w-5" />}
+        >
+          {analyticsData.customers.length > 0 ? (
+            <LeaderboardChart
+              data={analyticsData.customers.map((customer: any, index: number) => ({
+                name: customer.name,
+                value: customer.total
+              }))}
+              onItemClick={handleCustomerClick}
+              height={250}
+              colors={COLORS}
+              valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
+            />
+          ) : (
+            <EmptyState
+              type="customers"
+              message="Нет данных о клиентах"
+              description="Клиенты появятся после первых заказов"
+              size="sm"
+            />
+          )}
+        </ChartWrapper>
+      </motion.div>
+
+      {/* Additional Charts */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
+      >
+        {/* Top Cities */}
+        <ChartWrapper
+          title="География продаж"
+          icon={<MapPin className="h-5 w-5" />}
+        >
+          {analyticsData.cities.length > 0 ? (
+            <LeaderboardChart
+              data={analyticsData.cities.map((city: any) => ({
+                name: city.name,
+                value: city.total
+              }))}
+              onItemClick={handleCityClick}
+              height={200}
+              colors={COLORS}
+              valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
+            />
+          ) : (
+            <EmptyState
+              type="analytics"
+              message="Нет географических данных"
+              description="Данные появятся после обработки заказов"
+              size="sm"
+            />
+          )}
+        </ChartWrapper>
+
+        {/* Top Products */}
+        <ChartWrapper
+          title="Популярные товары"
+          icon={<Package className="h-5 w-5" />}
+        >
+          {analyticsData.products.length > 0 ? (
+            <div className="space-y-3">
+              {analyticsData.products.slice(0, 5).map((product: any, index: number) => (
+                <motion.div
+                  key={product.name}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleProductClick(product)}
+                  whileHover={{ x: 4 }}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Package className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-foreground line-clamp-1">
+                        {product.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {product.avgDailyConsumption.toFixed(1)} шт/день
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-foreground">
+                      #{index + 1}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {product.totalQuantity} шт
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              type="products"
+              message="Нет данных о продуктах"
+              description="Добавьте товары для анализа популярности"
+              size="sm"
+              action={{
+                label: "Перейти к товарам",
+                onClick: () => navigate('/products')
+              }}
+            />
+          )}
+        </ChartWrapper>
+      </motion.div>
+    </motion.div>
   );
-} 
+}

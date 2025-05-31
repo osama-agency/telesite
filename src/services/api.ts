@@ -1,4 +1,18 @@
 import { toast } from 'sonner';
+
+// Import demo API if in demo mode
+import * as demoApi from './demoApi';
+
+// Check if demo mode is active
+const isDemoMode = () => {
+  if (typeof window !== 'undefined') {
+    // Check localStorage first, then window.isDemoMode
+    const savedDemoMode = localStorage.getItem('isDemoMode') === 'true';
+    return savedDemoMode || window.isDemoMode === true;
+  }
+  return false;
+};
+
 // Define pagination types first
 export interface PaginationParams {
   page?: number;
@@ -73,6 +87,7 @@ export interface ApiProduct extends ApiProductBase {
   deliveryDays: number;
   revenue?: number; // Оборот за период
   inDelivery?: number; // Количество товаров в доставке
+  firstSaleDate?: string; // Дата первой продажи товара
 }
 // Order types
 export interface OrderWithProducts {
@@ -185,6 +200,19 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit & {
 // Enhanced Products API with success messages
 export const productsApi = {
   getAll: async (params?: PaginationParams & { exchangeRate?: number }): Promise<PaginatedResponse<ApiProduct>> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      const result = await demoApi.productsApi.getAll();
+      return {
+        data: result.data as any,
+        metadata: {
+          total: result.data.length,
+          page: 1,
+          limit: 20
+        }
+      };
+    }
+    
     try {
       const queryParams = new URLSearchParams();
       if (params?.exchangeRate) {
@@ -209,6 +237,11 @@ export const productsApi = {
     name: string;
     costPriceTRY: number;
   }): Promise<ApiProduct> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      return await demoApi.productsApi.create(productData) as any;
+    }
+    
     try {
       const toastId = toast.loading('Создание товара...');
       const response = await fetch(`${API_URL}/products`, {
@@ -331,6 +364,19 @@ export const productsApi = {
 // Enhanced Orders API with success messages
 export const ordersApi = {
   getAll: async (): Promise<PaginatedResponse<OrderWithProducts>> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      const result = await demoApi.ordersApi.getAll();
+      return {
+        data: result.data as any,
+        metadata: {
+          total: result.total || result.data.length,
+          page: result.page || 1,
+          limit: result.limit || 20
+        }
+      };
+    }
+    
     try {
       console.log('Fetching orders from:', `${API_URL}/orders`);
       const response = await fetch(`${API_URL}/orders`);
@@ -420,6 +466,33 @@ export const customerOrdersApi = {
     search?: string;
     statusFilter?: string[];
   }): Promise<PaginatedResponse<ApiCustomerOrder>> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      const result = await demoApi.ordersApi.getAll();
+      // Transform demo orders to customer orders format
+      const customerOrders = result.data.map((order: any) => ({
+        id: order.id,
+        paymentDate: order.orderDate,
+        customerId: order.id,
+        customerName: order.customerName,
+        address: 'Москва, ул. Примерная, д. 1',
+        deliveryCost: 500,
+        productName: order.products[0]?.name || 'Товар',
+        quantity: order.products.reduce((sum: number, p: any) => sum + p.quantity, 0),
+        price: order.totalAmount,
+        status: order.status
+      }));
+      
+      return {
+        data: customerOrders,
+        metadata: {
+          total: customerOrders.length,
+          page: 1,
+          limit: 20
+        }
+      };
+    }
+    
     try {
       const queryParams = new URLSearchParams({
         page: String(params?.page || 1),
@@ -468,6 +541,39 @@ export const customerOrdersApi = {
       throw error;
     }
   },
+  resync: async (): Promise<void> => {
+    // Skip resync in demo mode
+    if (isDemoMode()) {
+      toast.success('Данные демо режима всегда актуальны');
+      return;
+    }
+
+    try {
+      const toastId = toast.loading('Обновление данных с внешнего API...');
+      
+      const response = await fetch(`${API_URL}/customer-orders/resync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to resync customer orders');
+      }
+      
+      const data = await response.json();
+      console.log('Resync response:', data);
+      
+      toast.success(`Данные успешно обновлены! Синхронизировано ${data.total || 0} заказов`, {
+        id: toastId
+      });
+    } catch (error) {
+      console.error('Error in resync:', error);
+      toast.error('Не удалось обновить данные с сервера');
+      throw error;
+    }
+  },
   create: (order: Omit<ApiCustomerOrder, 'id'>) => fetchApi<ApiCustomerOrder>('/customer-orders', {
     method: 'POST',
     body: JSON.stringify(order),
@@ -511,6 +617,19 @@ export const customerOrdersApi = {
 // Enhanced Expenses API with pagination
 export const expensesApi = {
   getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Expense>> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      const result = await demoApi.expensesApi.getAll();
+      return {
+        data: result.data as any,
+        metadata: {
+          total: result.data.length,
+          page: 1,
+          limit: 10
+        }
+      };
+    }
+    
     try {
       const queryParams = new URLSearchParams({
         page: String(params?.page || 1),
@@ -547,6 +666,11 @@ export const expensesApi = {
     }
   },
   create: async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      return await demoApi.expensesApi.create(expense) as any;
+    }
+    
     try {
       const toastId = toast.loading('Добавление расхода...');
       
@@ -595,6 +719,12 @@ export const expensesApi = {
     }
   },
   update: async (id: string, expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      // Demo doesn't have update, but we can simulate it
+      return { ...expense, id, createdAt: new Date().toISOString() };
+    }
+    
     try {
       const toastId = toast.loading('Обновление расхода...');
       
@@ -641,6 +771,12 @@ export const expensesApi = {
     }
   },
   delete: async (id: string): Promise<void> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      await demoApi.expensesApi.delete(id);
+      return;
+    }
+    
     try {
       const toastId = toast.loading('Удаление расхода...');
       const response = await fetch(`${API_URL}/expenses/${id}`, {
@@ -691,6 +827,19 @@ export const purchasesApi = {
     from?: string;
     to?: string;
   }): Promise<PaginatedResponse<Purchase>> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      const result = await demoApi.purchasesApi.getAll();
+      return {
+        data: result.data as any,
+        metadata: {
+          total: result.data.length,
+          page: 1,
+          limit: 50
+        }
+      };
+    }
+    
     try {
       const queryParams = new URLSearchParams({
         page: String(params?.page || 1),
@@ -730,6 +879,11 @@ export const purchasesApi = {
     }>;
     estimatedDeliveryDays?: number;
   }): Promise<Purchase> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      return await demoApi.purchasesApi.create(purchaseData) as any;
+    }
+    
     try {
       const toastId = toast.loading('Создание закупки...');
       const response = await fetch(`${API_URL}/purchases`, {
@@ -792,6 +946,12 @@ export const purchasesApi = {
   },
   
   delete: async (id: string): Promise<void> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      await demoApi.purchasesApi.delete(id);
+      return;
+    }
+    
     try {
       const toastId = toast.loading('Удаление закупки...');
       const response = await fetch(`${API_URL}/purchases/${id}`, {
@@ -816,6 +976,11 @@ export const purchasesApi = {
     }>;
     deliveryExpenseRUB: number;
   }): Promise<Purchase> => {
+    // Use demo API if in demo mode
+    if (isDemoMode()) {
+      return await demoApi.purchasesApi.receive(id, data) as any;
+    }
+    
     try {
       const toastId = toast.loading('Оприходование закупки...');
       const response = await fetch(`${API_URL}/purchases/${id}/receive`, {

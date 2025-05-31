@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Analytics } from './pages/Analytics';
@@ -11,10 +11,32 @@ import { Test } from './pages/Test';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from 'sonner';
 
-export function App() {
+// Extend window type for demo mode
+declare global {
+  interface Window {
+    isDemoMode?: boolean;
+  }
+}
+
+export default function App() {
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage and window for demo mode
+    const savedDemoMode = localStorage.getItem('isDemoMode') === 'true';
+    setIsDemoMode(savedDemoMode || window.isDemoMode === true);
+    window.isDemoMode = savedDemoMode;
+  }, []);
+
+  const handleExitDemo = () => {
+    window.isDemoMode = false;
+    localStorage.setItem('isDemoMode', 'false');
+    window.location.reload();
+  };
+
   return <ThemeProvider>
         <Router>
-          <Layout>
+          <Layout isDemoMode={isDemoMode} onExitDemo={handleExitDemo}>
             <Routes>
               <Route path="/" element={<Analytics />} />
               <Route path="/analytics" element={<Analytics />} />
@@ -27,6 +49,14 @@ export function App() {
             </Routes>
           </Layout>
         </Router>
-      <Toaster richColors position="top-right" />
+        <Toaster 
+          richColors 
+          position="top-right" 
+          toastOptions={{
+            style: {
+              marginTop: isDemoMode ? '50px' : '16px',
+            },
+          }}
+        />
     </ThemeProvider>;
 }

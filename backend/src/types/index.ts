@@ -35,6 +35,7 @@ export interface ApiProduct {
   deliveryDays?: number;
   revenue?: number; // Оборот за период
   inDelivery?: number; // Количество товаров в доставке
+  firstSaleDate?: string; // Дата первой продажи товара
 }
 
 export interface CalculatedProduct extends ApiProduct {

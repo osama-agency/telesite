@@ -167,6 +167,42 @@ export class ProductService {
     }
   }
 
+  // Функция для получения первой даты продажи товара
+  private async getFirstSaleDate(productName: string): Promise<Date | null> {
+    try {
+      // Ищем все продажи этого товара
+      const orders = await CustomerOrder.find({
+        productName: productName,
+        status: { $in: ['processing', 'shipped', 'delivered'] }
+      });
+      
+      if (orders.length === 0) return null;
+      
+      // Парсим даты и находим самую раннюю
+      let earliestDate: Date | null = null;
+      
+      for (const order of orders) {
+        const orderDate = this.parseDateFromRussianFormat(order.paymentDate);
+        
+        // Проверяем, что дата корректная (не 1970 год)
+        if (orderDate.getFullYear() < 2020) continue;
+        
+        if (!earliestDate || orderDate < earliestDate) {
+          earliestDate = orderDate;
+        }
+      }
+      
+      if (earliestDate) {
+        console.log(`First sale date for ${productName}: ${earliestDate.toISOString()}`);
+      }
+      
+      return earliestDate;
+    } catch (error) {
+      console.error('Error getting first sale date:', error);
+      return null;
+    }
+  }
+
   // Функция для расчета распределенных расходов на товар
   private async calculateDistributedExpenses(productId: string, productName: string, soldQuantity: number, from?: string, to?: string): Promise<number> {
     try {
@@ -318,12 +354,34 @@ export class ProductService {
         const netProfitTotal = netProfit * totalSold;
         const profitPercentTotal = totalRevenue > 0 ? (netProfitTotal / totalRevenue) * 100 : 0;
         
+        // Получаем первую дату продажи для расчета периода
+        let firstSaleDate: Date | null = null;
+        
         // Для расчета среднего потребления используем период в днях
-        let periodDays = 30;
+        let periodDays = 30; // дефолт если нет продаж
+        
         if (from && to) {
+          // Если указан конкретный период
           const startDate = new Date(from);
           const endDate = new Date(to);
           periodDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+        } else if (!from && !to && totalSold > 0) {
+          // Если выбран "Все время" и есть продажи - считаем от первой продажи
+          firstSaleDate = await this.getFirstSaleDate(product.name);
+          
+          if (firstSaleDate) {
+            const today = new Date();
+            const daysSinceFirstSale = Math.ceil((today.getTime() - firstSaleDate.getTime()) / (1000 * 60 * 60 * 24));
+            periodDays = Math.max(1, daysSinceFirstSale);
+            
+            console.log(`Product ${product.name}: first sale ${firstSaleDate.toISOString()}, days since: ${periodDays}`);
+          } else {
+            // Если не удалось найти первую продажу, используем количество дней с создания товара
+            const createdDate = new Date(product.created_at);
+            const today = new Date();
+            const daysSinceCreated = Math.ceil((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+            periodDays = Math.max(1, Math.min(daysSinceCreated, 365)); // максимум год
+          }
         }
         
         const soldPeriod = periodDays;
@@ -393,7 +451,8 @@ export class ProductService {
           fixedCosts,
           deliveryDays,
           revenue: totalRevenue, // Добавляем оборот
-          inDelivery // Количество товаров в доставке
+          inDelivery, // Количество товаров в доставке
+          firstSaleDate: firstSaleDate ? firstSaleDate.toISOString() : undefined // Дата первой продажи
         };
 
         return apiProduct;

@@ -27,6 +27,7 @@ interface Product {
   deliveryDays: number;
   tryRate?: number; // New field for per-row exchange rate
   revenue?: number; // Оборот за период
+  firstSaleDate?: string; // Дата первой продажи товара
 }
 
 interface ProductTableProps {
@@ -443,7 +444,29 @@ export function ProductTable({
                       </td>
                       {/* Продано за период */}
                       <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm hidden 2xl:table-cell">
-                        {product.soldQuantity} шт
+                        <div className="relative group">
+                          <div>
+                            <div className="font-medium">{product.soldQuantity} шт</div>
+                            <div className="text-xs text-muted-foreground">
+                              за {product.soldPeriod} {product.soldPeriod === 1 ? 'день' : 'дней'}
+                            </div>
+                          </div>
+                          {product.firstSaleDate && (
+                            <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-40">
+                              <div className="space-y-1">
+                                <p className="font-semibold">Первая продажа:</p>
+                                <p>{new Date(product.firstSaleDate).toLocaleDateString('ru-RU', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric'
+                                })}</p>
+                              </div>
+                              <div className="absolute top-full left-4 -mt-1">
+                                <div className="border-4 border-transparent border-t-slate-900"></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </td>
                       {/* Среднее потребление в сутки */}
                       <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm hidden 2xl:table-cell">

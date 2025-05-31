@@ -1,5 +1,6 @@
 import * as cron from 'node-cron';
 import { AnalyticsService } from './AnalyticsService';
+import { customerOrderService } from './customerOrderService';
 
 export class SchedulerService {
   private analyticsService: AnalyticsService;
@@ -12,6 +13,20 @@ export class SchedulerService {
   // Запуск всех scheduled задач
   startScheduledTasks(): void {
     console.log('Starting scheduled tasks...');
+
+    // Обновление заказов клиентов каждые 10 минут
+    const customerOrdersTask = cron.schedule('*/10 * * * *', async () => {
+      console.log('Running customer orders update (every 10 minutes)...');
+      try {
+        const orders = await customerOrderService.getAllOrders();
+        console.log(`Customer orders update completed successfully - ${orders.length} orders synchronized`);
+      } catch (error) {
+        console.error('Error in customer orders update:', error);
+      }
+    }, {
+      timezone: 'Europe/Moscow'
+    });
+    this.tasks.set('customerOrders', customerOrdersTask);
 
     // Обновление аналитики каждый день в 00:30
     const dailyTask = cron.schedule('30 0 * * *', async () => {
@@ -69,7 +84,7 @@ export class SchedulerService {
     });
     this.tasks.set('weekly', weeklyTask);
 
-    console.log('Scheduled tasks started successfully');
+    console.log('Scheduled tasks started successfully - customer orders will update every 10 minutes');
   }
 
   // Остановка всех scheduled задач
@@ -93,5 +108,21 @@ export class SchedulerService {
       });
     });
     return tasks;
+  }
+
+  // Метод для принудительного обновления customer orders
+  async forceUpdateCustomerOrders(): Promise<{ success: boolean; ordersCount?: number; error?: string }> {
+    try {
+      console.log('Force updating customer orders...');
+      const orders = await customerOrderService.getAllOrders();
+      console.log(`Force update completed - ${orders.length} orders synchronized`);
+      return { success: true, ordersCount: orders.length };
+    } catch (error) {
+      console.error('Error in force customer orders update:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
   }
 } 

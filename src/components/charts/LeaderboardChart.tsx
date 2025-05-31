@@ -8,12 +8,12 @@ interface LeaderboardItem {
   total?: number;
 }
 
-interface LeaderboardChartProps {
-  data: LeaderboardItem[];
-  title?: string;
-  formatValue?: (value: number) => string;
-  showPercentage?: boolean;
-  onItemClick?: (item: LeaderboardItem) => void;
+export interface LeaderboardChartProps {
+  data: Array<{ name: string; value: number }>;
+  height: number;
+  colors: string[];
+  valueFormatter: (value: number) => string;
+  onItemClick?: (item: any) => void;
 }
 
 const getRankIcon = (rank: number) => {
@@ -70,178 +70,29 @@ const getRankColors = (rank: number) => {
   }
 };
 
-export function LeaderboardChart({ 
-  data, 
-  title, 
-  formatValue = (v) => `₽${v.toLocaleString()}`,
-  showPercentage = true,
-  onItemClick
-}: LeaderboardChartProps) {
-  const maxValue = Math.max(...data.map(item => item.value));
-
+export function LeaderboardChart({ data, height, colors, valueFormatter, onItemClick }: LeaderboardChartProps) {
   return (
-    <div className="space-y-3">
-      {data.map((item, index) => {
-        const rank = index + 1;
-        const colors = getRankColors(rank);
-        const percentage = (item.value / maxValue) * 100;
-        
-        return (
-          <motion.div
+    <div style={{ height }} className="overflow-y-auto">
+      <div className="space-y-2">
+        {data.map((item, index) => (
+          <div
             key={item.name}
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ 
-              delay: index * 0.1, 
-              duration: 0.5,
-              ease: [0.25, 0.1, 0.25, 1.0]
-            }}
-            whileHover={{ scale: 1.02 }}
-            className={`relative`}
+            className="flex items-center justify-between p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors cursor-pointer"
+            onClick={() => onItemClick?.(item)}
           >
-            <motion.div
-              className={`
-                relative overflow-hidden rounded-xl border backdrop-blur-sm
-                ${colors.border} ${colors.bg} bg-gradient-to-br
-                transition-all duration-300 hover:shadow-lg
-                ${rank === 1 ? 'shadow-lg ' + colors.glow : ''}
-                ${onItemClick ? 'cursor-pointer hover:scale-105' : ''}
-              `}
-              onClick={() => onItemClick?.(item)}
-              animate={rank === 1 ? {
-                boxShadow: [
-                  '0 0 20px rgba(251, 191, 36, 0.3)',
-                  '0 0 40px rgba(251, 191, 36, 0.5)',
-                  '0 0 20px rgba(251, 191, 36, 0.3)',
-                ]
-              } : {}}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              {/* Animated background pattern for #1 */}
-              {rank === 1 && (
-                <motion.div
-                  className="absolute inset-0 opacity-10"
-                  animate={{
-                    backgroundPosition: ['0% 0%', '100% 100%'],
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                  style={{
-                    backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23fbbf24" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-                    backgroundSize: '60px 60px',
-                  }}
-                />
-              )}
-
-              <div className="relative p-4 sm:p-5">
-                <div className="flex items-start gap-3">
-                  {/* Rank Badge */}
-                  <motion.div
-                    className={`
-                      flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 
-                      flex items-center justify-center
-                      rounded-full bg-white/50 dark:bg-slate-900/50
-                      ${colors.icon}
-                    `}
-                    animate={rank === 1 ? { 
-                      rotate: [0, -10, 10, -10, 10, 0],
-                      scale: [1, 1.1, 1]
-                    } : {}}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      repeatDelay: 2
-                    }}
-                  >
-                    {getRankIcon(rank)}
-                  </motion.div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2 mb-2">
-                      <h4 className={`font-semibold text-sm sm:text-base truncate ${colors.text}`}>
-                        {item.name}
-                      </h4>
-                      <span className={`font-bold text-sm sm:text-base ${colors.text} flex-shrink-0`}>
-                        {formatValue(item.value)}
-                      </span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="relative h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percentage}%` }}
-                        transition={{ 
-                          delay: index * 0.1 + 0.3, 
-                          duration: 0.8,
-                          ease: [0.25, 0.1, 0.25, 1.0]
-                        }}
-                        className={`absolute inset-y-0 left-0 bg-gradient-to-r ${colors.bar} rounded-full`}
-                      >
-                        {rank === 1 && (
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                            animate={{
-                              x: ['-100%', '200%']
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              repeatDelay: 1,
-                              ease: "easeInOut"
-                            }}
-                          />
-                        )}
-                      </motion.div>
-                    </div>
-
-                    {/* Percentage */}
-                    {showPercentage && (
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          {percentage.toFixed(1)}% от лидера
-                        </span>
-                        {rank === 1 && (
-                          <motion.div
-                            className="flex items-center gap-1"
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                          >
-                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
-                              Лидер
-                            </span>
-                          </motion.div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Crown for #1 */}
-            {rank === 1 && (
-              <motion.div
-                className="absolute -top-3 left-1/2 transform -translate-x-1/2"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-              >
-                <Crown className="w-6 h-6 text-yellow-500 fill-yellow-400" />
-              </motion.div>
-            )}
-          </motion.div>
-        );
-      })}
+            <div className="flex items-center gap-3">
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: colors[index % colors.length] }}
+              />
+              <span className="font-medium">{item.name}</span>
+            </div>
+            <span className="text-muted-foreground">
+              {valueFormatter(item.value)}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 } 

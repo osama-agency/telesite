@@ -55,40 +55,9 @@ export class CustomerOrderService {
       return order.paid_at;
     }
     
-    console.log(`paid_at is null, calculating from created_at + 1 day`);
-    
-    // Если paid_at null, используем created_at + 1 день
-    // Парсим дату из формата DD.MM.YYYY HH:mm:ss
-    const dateStr = order.created_at;
-    const [datePart, timePart] = dateStr.split(' ');
-    const [day, month, year] = datePart.split('.');
-    const [hours, minutes, seconds] = timePart.split(':');
-    
-    // Создаем объект Date (месяц в JavaScript начинается с 0)
-    const createdDate = new Date(
-      parseInt(year), 
-      parseInt(month) - 1, 
-      parseInt(day),
-      parseInt(hours),
-      parseInt(minutes),
-      parseInt(seconds)
-    );
-    
-    // Добавляем 1 день
-    createdDate.setDate(createdDate.getDate() + 1);
-    
-    // Форматируем дату в том же формате что и в API (DD.MM.YYYY HH:mm:ss)
-    const newDay = String(createdDate.getDate()).padStart(2, '0');
-    const newMonth = String(createdDate.getMonth() + 1).padStart(2, '0');
-    const newYear = createdDate.getFullYear();
-    const newHours = String(createdDate.getHours()).padStart(2, '0');
-    const newMinutes = String(createdDate.getMinutes()).padStart(2, '0');
-    const newSeconds = String(createdDate.getSeconds()).padStart(2, '0');
-    
-    const result = `${newDay}.${newMonth}.${newYear} ${newHours}:${newMinutes}:${newSeconds}`;
-    console.log(`Calculated payment date: ${result}`);
-    
-    return result;
+    console.log(`paid_at is null, using created_at as payment date`);
+    // Если paid_at null, используем created_at БЕЗ +1 день
+    return order.created_at;
   }
 
   private transformOrderToCustomerOrders(order: ApiOrder): ApiCustomerOrder[] {

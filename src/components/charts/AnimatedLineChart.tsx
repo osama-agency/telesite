@@ -13,22 +13,13 @@ import {
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface AnimatedLineChartProps {
+export interface AnimatedLineChartProps {
   data: any[];
-  lines: {
-    dataKey: string;
-    stroke: string;
-    name: string;
-    strokeWidth?: number;
-  }[];
-  xDataKey: string;
-  height?: number;
-  showGrid?: boolean;
-  showLegend?: boolean;
-  animationDuration?: number;
-  formatTooltip?: (value: any, name: string) => string;
-  formatXAxis?: (value: any) => string;
-  formatYAxis?: (value: any) => string;
+  height: number;
+  index: string;
+  keys: string[];
+  colors: string[];
+  legends: string[];
 }
 
 const CustomTooltip = ({ active, payload, label, formatTooltip }: TooltipProps<number, string> & { formatTooltip?: (value: any, name: string) => string }) => {
@@ -86,30 +77,19 @@ const CustomLegend = (props: LegendProps) => {
   );
 };
 
-export function AnimatedLineChart({
-  data,
-  lines,
-  xDataKey,
-  height,
-  showGrid = true,
-  showLegend = true,
-  animationDuration = 1500,
-  formatTooltip,
-  formatXAxis,
-  formatYAxis,
-}: AnimatedLineChartProps) {
+export function AnimatedLineChart({ data, height, index, keys, colors, legends }: AnimatedLineChartProps) {
   const [isAnimating, setIsAnimating] = useState(true);
-  const [visibleLines, setVisibleLines] = useState<Set<string>>(new Set(lines.map(l => l.dataKey)));
+  const [visibleLines, setVisibleLines] = useState<Set<string>>(new Set(keys));
   const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
     if (!shouldReduceMotion) {
-      const timer = setTimeout(() => setIsAnimating(false), animationDuration);
+      const timer = setTimeout(() => setIsAnimating(false), 1500);
       return () => clearTimeout(timer);
     } else {
       setIsAnimating(false);
     }
-  }, [animationDuration, shouldReduceMotion]);
+  }, [shouldReduceMotion]);
 
   const toggleLine = (dataKey: string) => {
     setVisibleLines(prev => {
@@ -124,72 +104,43 @@ export function AnimatedLineChart({
   };
 
   return (
-    <div style={{ width: '100%', height: height || 'clamp(240px, 40vh, 420px)' }} className="relative">
-      <ResponsiveContainer>
-        <LineChart
-          data={data}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          {showGrid && (
-            <CartesianGrid
-              strokeDasharray="3 3"
-              className="opacity-30"
-              stroke="currentColor"
-            />
-          )}
-          <XAxis
-            dataKey={xDataKey}
-            tick={{ fontSize: 12 }}
-            tickFormatter={formatXAxis}
-            className="text-slate-600 dark:text-slate-400"
-          />
-          <YAxis
-            tick={{ fontSize: 12 }}
-            tickFormatter={formatYAxis}
-            className="text-slate-600 dark:text-slate-400"
-          />
+    <div style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey={index} />
+          <YAxis />
           <Tooltip
-            content={<CustomTooltip formatTooltip={formatTooltip} />}
+            content={<CustomTooltip />}
             cursor={{ stroke: 'rgba(148, 163, 184, 0.3)', strokeWidth: 1 }}
           />
-          {lines.map((line, index) => (
+          {keys.map((key, i) => (
             <Line
-              key={line.dataKey}
+              key={key}
               type="monotone"
-              dataKey={line.dataKey}
-              stroke={line.stroke}
-              strokeWidth={line.strokeWidth || 2}
-              name={line.name}
-              dot={false}
-              activeDot={{
-                r: 6,
-                onMouseEnter: (e: any) => {
-                  e.target.style.r = 8;
-                  e.target.style.transition = 'all 0.2s ease';
-                },
-                onMouseLeave: (e: any) => {
-                  e.target.style.r = 6;
-                }
-              }}
-              hide={!visibleLines.has(line.dataKey)}
+              dataKey={key}
+              name={legends[i]}
+              stroke={colors[i]}
+              strokeWidth={2}
+              dot={{ r: 4, fill: colors[i] }}
+              activeDot={{ r: 6 }}
+              hide={!visibleLines.has(key)}
               strokeDasharray={isAnimating && !shouldReduceMotion ? "1000 1000" : "0"}
               strokeDashoffset={isAnimating && !shouldReduceMotion ? 1000 : 0}
               style={{
                 animation: isAnimating && !shouldReduceMotion
-                  ? `drawLine ${animationDuration}ms ease-out forwards`
+                  ? `drawLine 1500ms ease-out forwards`
                   : 'none',
-                animationDelay: `${index * 200}ms`,
+                animationDelay: `${i * 200}ms`,
                 transition: 'opacity 0.3s ease',
-                opacity: visibleLines.has(line.dataKey) ? 1 : 0,
+                opacity: visibleLines.has(key) ? 1 : 0,
               }}
             />
           ))}
-          {showLegend && (
-            <Legend
-              content={<CustomLegend />}
-              onClick={(e) => toggleLine(e.dataKey as string)}
-            />
-          )}
+          <Legend
+            content={<CustomLegend />}
+            onClick={(e) => toggleLine(e.dataKey as string)}
+          />
         </LineChart>
       </ResponsiveContainer>
       <style>{`

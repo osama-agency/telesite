@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CustomerOrderService } from '../services/customerOrderService';
 import { CustomerOrder } from '../models/CustomerOrder';
+import { schedulerService } from '../app';
 
 const customerOrderService = new CustomerOrderService();
 
@@ -301,16 +302,24 @@ export const customerOrderController = {
 
   async resyncOrders(req: Request, res: Response) {
     try {
-      console.log('Clearing existing customer orders...');
-      await CustomerOrder.deleteMany({});
+      console.log('Manual re-sync requested...');
       
-      console.log('Re-syncing orders with updated date logic...');
-      const orders = await customerOrderService.getAllOrders();
+      // Используем schedulerService для принудительного обновления
+      const result = await schedulerService.forceUpdateCustomerOrders();
       
-      res.json({
-        message: 'Orders re-synchronized successfully',
-        total: orders.length
-      });
+      if (result.success) {
+        res.json({
+          message: 'Orders synchronized successfully',
+          total: result.ordersCount,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          message: 'Failed to synchronize orders',
+          error: result.error,
+          timestamp: new Date().toISOString()
+        });
+      }
     } catch (error) {
       console.error('Error in resyncOrders:', error);
       res.status(500).json({

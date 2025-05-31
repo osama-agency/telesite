@@ -32,6 +32,7 @@ interface Product {
   fixedCosts: number;
   deliveryDays: number;
   revenue?: number;
+  firstSaleDate?: string;
 }
 
 const DEMO_PRODUCTS: Product[] = [{
@@ -273,7 +274,8 @@ export function Products() {
       exchangeRate: effectiveRate,
       fixedCosts,
       deliveryDays,
-      revenue
+      revenue,
+      firstSaleDate: product.firstSaleDate
     };
   };
 
@@ -312,6 +314,7 @@ export function Products() {
       console.log('First product data:', response.data?.[0]);
       console.log('SoldQuantity for first product:', response.data?.[0]?.soldQuantity);
       console.log('Revenue for first product:', response.data?.[0]?.revenue);
+      console.log('FirstSaleDate for first product:', response.data?.[0]?.firstSaleDate);
       
       const productsToUse = !response || !response.data || response.data.length === 0 ? DEMO_PRODUCTS : response.data.map(product => calculateMetrics(product, exchangeRate));
       if (!response || !response.data || response.data.length === 0) {
@@ -697,7 +700,7 @@ export function Products() {
                   className="absolute top-full mt-2 left-0 right-0 sm:left-auto sm:right-auto sm:w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-border/20 z-50 max-h-96 overflow-y-auto"
                 >
                   <div className="py-1">
-                    {periodOptions.slice(0, selectedPeriod === 'custom' ? -1 : periodOptions.length).map((option) => (
+                    {periodOptions.slice(0, -1).map((option) => (
                       <button
                         key={option.value}
                         onClick={() => {
@@ -717,18 +720,20 @@ export function Products() {
                         )}
                       </button>
                     ))}
-                    
-                    {selectedPeriod !== 'custom' && (
-                      <button
-                        onClick={() => {
-                          setSelectedPeriod('custom');
-                        }}
-                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm hover:bg-accent/80 transition-all text-foreground/80"
-                      >
-                        <Calendar className="h-4 w-4 opacity-60 flex-shrink-0" />
-                        <span className="flex-1 text-left">Свой период</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        setSelectedPeriod('custom');
+                      }}
+                      className={`w-full flex items-center space-x-3 px-4 py-2 text-sm hover:bg-accent/80 transition-all ${
+                        selectedPeriod === 'custom' ? 'bg-emerald-500/10 text-emerald-600 font-medium' : 'text-foreground/80'
+                      }`}
+                    >
+                      <Calendar className="h-4 w-4 opacity-60 flex-shrink-0" />
+                      <span className="flex-1 text-left">Свой период</span>
+                      {selectedPeriod === 'custom' && (
+                        <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                      )}
+                    </button>
                   </div>
                   
                   {selectedPeriod === 'custom' && (

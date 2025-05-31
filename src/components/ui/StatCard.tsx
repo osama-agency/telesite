@@ -1,178 +1,334 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LucideIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, LucideIcon } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: LucideIcon;
-  description?: string;
-  trend?: {
+  change?: {
     value: number;
     isPositive: boolean;
   };
+  icon?: LucideIcon;
+  loading?: boolean;
+  variant?: 'default' | 'gradient' | 'outline' | 'minimal';
+  size?: 'sm' | 'md' | 'lg';
   color?: 'primary' | 'success' | 'warning' | 'danger' | 'info';
-  delay?: number;
-  compact?: boolean;
+  suffix?: string;
+  description?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  sparkline?: number[];
+  onClick?: () => void;
 }
 
-export function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  description, 
-  trend,
+export function StatCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  loading = false,
+  variant = 'default',
+  size = 'md',
   color = 'primary',
-  delay = 0,
-  compact = false
+  suffix,
+  description,
+  trend,
+  sparkline,
+  onClick
 }: StatCardProps) {
-  const colorClasses = {
-    primary: 'from-primary/10 to-purple-500/10 border-primary/20 text-primary',
-    success: 'from-emerald-500/10 to-green-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-    warning: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
-    danger: 'from-red-500/10 to-rose-500/10 border-red-500/20 text-red-600 dark:text-red-400',
-    info: 'from-blue-500/10 to-cyan-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400'
-  };
   
-  const iconBgClasses = {
-    primary: 'bg-gradient-to-br from-primary to-purple-500',
-    success: 'bg-gradient-to-br from-emerald-500 to-green-500',
-    warning: 'bg-gradient-to-br from-amber-500 to-orange-500',
-    danger: 'bg-gradient-to-br from-red-500 to-rose-500',
-    info: 'bg-gradient-to-br from-blue-500 to-cyan-500'
+  // Color schemes for different variants
+  const colorSchemes = {
+    primary: {
+      gradient: 'from-blue-500/10 via-purple-500/10 to-blue-500/10',
+      border: 'border-blue-200/50 dark:border-blue-800/50',
+      icon: 'text-blue-600 dark:text-blue-400',
+      accent: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-50/50 dark:bg-blue-900/20'
+    },
+    success: {
+      gradient: 'from-emerald-500/10 via-green-500/10 to-emerald-500/10',
+      border: 'border-emerald-200/50 dark:border-emerald-800/50',
+      icon: 'text-emerald-600 dark:text-emerald-400',
+      accent: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-50/50 dark:bg-emerald-900/20'
+    },
+    warning: {
+      gradient: 'from-amber-500/10 via-yellow-500/10 to-amber-500/10',
+      border: 'border-amber-200/50 dark:border-amber-800/50',
+      icon: 'text-amber-600 dark:text-amber-400',
+      accent: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-50/50 dark:bg-amber-900/20'
+    },
+    danger: {
+      gradient: 'from-red-500/10 via-pink-500/10 to-red-500/10',
+      border: 'border-red-200/50 dark:border-red-800/50',
+      icon: 'text-red-600 dark:text-red-400',
+      accent: 'text-red-600 dark:text-red-400',
+      bg: 'bg-red-50/50 dark:bg-red-900/20'
+    },
+    info: {
+      gradient: 'from-cyan-500/10 via-sky-500/10 to-cyan-500/10',
+      border: 'border-cyan-200/50 dark:border-cyan-800/50',
+      icon: 'text-cyan-600 dark:text-cyan-400',
+      accent: 'text-cyan-600 dark:text-cyan-400',
+      bg: 'bg-cyan-50/50 dark:bg-cyan-900/20'
+    }
   };
-  
+
+  const scheme = colorSchemes[color];
+
+  // Size configurations
+  const sizeConfig = {
+    sm: {
+      padding: 'p-4',
+      iconSize: 'h-5 w-5',
+      titleSize: 'text-xs',
+      valueSize: 'text-lg',
+      changeSize: 'text-xs'
+    },
+    md: {
+      padding: 'p-5 sm:p-6',
+      iconSize: 'h-6 w-6',
+      titleSize: 'text-sm',
+      valueSize: 'text-xl sm:text-2xl',
+      changeSize: 'text-sm'
+    },
+    lg: {
+      padding: 'p-6 sm:p-8',
+      iconSize: 'h-7 w-7',
+      titleSize: 'text-base',
+      valueSize: 'text-2xl sm:text-3xl',
+      changeSize: 'text-base'
+    }
+  };
+
+  const config = sizeConfig[size];
+
+  // Trend icon component
+  const TrendIcon = () => {
+    if (!change && !trend) return null;
+    
+    let TrendComponent = Minus;
+    let trendColor = 'text-muted-foreground';
+    
+    const isPositive = change?.isPositive ?? (trend === 'up');
+    const isNegative = change ? !change.isPositive : (trend === 'down');
+    
+    if (isPositive) {
+      TrendComponent = TrendingUp;
+      trendColor = 'text-emerald-600 dark:text-emerald-400';
+    } else if (isNegative) {
+      TrendComponent = TrendingDown;
+      trendColor = 'text-red-600 dark:text-red-400';
+    }
+    
+    return <TrendComponent className={`h-3 w-3 sm:h-4 sm:w-4 ${trendColor}`} />;
+  };
+
+  // Sparkline component
+  const SparklineChart = ({ data }: { data: number[] }) => {
+    if (!data || data.length === 0) return null;
+    
+    const max = Math.max(...data);
+    const min = Math.min(...data);
+    const range = max - min;
+    
+    const points = data.map((value, index) => {
+      const x = (index / (data.length - 1)) * 100;
+      const y = range === 0 ? 50 : 100 - ((value - min) / range) * 100;
+      return `${x},${y}`;
+    }).join(' ');
+    
+    const isPositiveTrend = data[data.length - 1] > data[0];
+    
+    return (
+      <div className="absolute bottom-0 right-0 w-16 h-8 opacity-50">
+        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline
+            fill="none"
+            stroke={isPositiveTrend ? '#10b981' : '#ef4444'}
+            strokeWidth="2"
+            points={points}
+            className="drop-shadow-sm"
+          />
+          <defs>
+            <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor={isPositiveTrend ? '#10b981' : '#ef4444'} stopOpacity="0.3"/>
+              <stop offset="100%" stopColor={isPositiveTrend ? '#10b981' : '#ef4444'} stopOpacity="0.1"/>
+            </linearGradient>
+          </defs>
+          <polygon
+            fill={`url(#gradient-${color})`}
+            points={`0,100 ${points} 100,100`}
+          />
+        </svg>
+      </div>
+    );
+  };
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className={`
+        bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl 
+        rounded-xl sm:rounded-2xl border border-border/50 
+        ${config.padding} shadow-sm
+      `}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="skeleton h-4 w-20 rounded-md" />
+            <div className="skeleton h-5 w-5 rounded-md" />
+          </div>
+          <div className="skeleton h-8 w-24 rounded-md" />
+          <div className="skeleton h-3 w-16 rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
+  // Base card classes
+  const baseClasses = `
+    relative overflow-hidden transition-all duration-300
+    ${config.padding} shadow-sm hover:shadow-md
+    ${onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' : ''}
+  `;
+
+  // Variant-specific classes
+  const variantClasses = {
+    default: `
+      bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl 
+      rounded-xl sm:rounded-2xl border border-border/50
+      hover:border-border/70
+    `,
+    gradient: `
+      bg-gradient-to-br ${scheme.gradient} backdrop-blur-xl
+      rounded-xl sm:rounded-2xl border ${scheme.border}
+      hover:shadow-lg hover:shadow-primary/10
+    `,
+    outline: `
+      bg-transparent rounded-xl sm:rounded-2xl 
+      border-2 ${scheme.border} hover:${scheme.bg}
+    `,
+    minimal: `
+      bg-transparent rounded-lg hover:bg-muted/50
+      border-0
+    `
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
-        delay,
-        duration: 0.4,
-        ease: [0.25, 0.1, 0.25, 1]
-      }}
-      whileHover={{ 
-        scale: compact ? 1.02 : 1.03,
-        transition: { duration: 0.2 }
-      }}
-      whileTap={{ scale: 0.98 }}
-      className={`
-        stat-card group relative overflow-hidden
-        rounded-2xl lg:rounded-3xl border bg-gradient-to-br
-        ${colorClasses[color]}
-        backdrop-blur-xl shadow-lg hover:shadow-xl
-        transition-all duration-300 ease-out
-        ${compact ? 'p-4 sm:p-5 lg:p-6' : 'p-5 sm:p-6 lg:p-7'}
-        cursor-pointer touch-target
-      `}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className={`${baseClasses} ${variantClasses[variant]}`}
+      onClick={onClick}
+      whileHover={onClick ? { y: -2 } : undefined}
+      whileTap={onClick ? { scale: 0.98 } : undefined}
     >
-      {/* Background decoration with enhanced responsiveness */}
-      <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-lg lg:blur-2xl transform translate-x-6 sm:translate-x-12 lg:translate-x-16 -translate-y-6 sm:-translate-y-12 lg:-translate-y-16 transition-all duration-500 group-hover:scale-110" />
+      {/* Background decoration */}
+      {variant === 'gradient' && (
+        <div className="absolute inset-0 opacity-30">
+          <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${scheme.gradient} blur-3xl`} />
+        </div>
+      )}
+
+      {/* Sparkline */}
+      {sparkline && <SparklineChart data={sparkline} />}
       
-      {/* Content container with improved spacing */}
-      <div className={`
-        relative flex items-start justify-between gap-3 sm:gap-4 lg:gap-5
-        ${compact ? 'flex-row' : 'flex-col sm:flex-row'}
-      `}>
-        
-        {/* Text content with responsive typography */}
-        <div className="flex-1 min-w-0 space-y-1 sm:space-y-2">
-          <p className={`
-            font-medium text-muted-foreground truncate
-            ${compact 
-              ? 'text-responsive-card-title' 
-              : 'text-xs sm:text-sm lg:text-base'
-            }
-          `}>
+      <div className="relative z-10 space-y-3 sm:space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <motion.h3 
+            className={`${config.titleSize} font-medium text-muted-foreground leading-tight`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
             {title}
-          </p>
+          </motion.h3>
           
-          <div className={`
-            font-bold leading-tight text-slate-900 dark:text-white
-            ${compact 
-              ? 'text-responsive-card-value' 
-              : 'text-lg sm:text-xl lg:text-2xl xl:text-3xl'
-            }
-          `}>
-            {typeof value === 'string' && value.length > 15 
-              ? (
-                <span className="break-words hyphens-auto" lang="ru">
-                  {value}
-                </span>
-              )
-              : (
-                <span className="tabular-nums">
-                  {value}
-                </span>
-              )
-            }
+          {Icon && (
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className={`
+                ${config.iconSize} ${scheme.icon} flex-shrink-0
+                p-2 rounded-lg ${scheme.bg}
+              `}
+            >
+              <Icon className="w-full h-full" />
+            </motion.div>
+          )}
+        </div>
+
+        {/* Value */}
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
+          className="space-y-1"
+        >
+          <div className={`${config.valueSize} font-bold text-foreground leading-tight`}>
+            {typeof value === 'number' ? value.toLocaleString() : value}
+            {suffix && <span className="text-muted-foreground text-sm ml-1">{suffix}</span>}
           </div>
           
           {description && (
-            <p className={`
-              text-muted-foreground leading-relaxed
-              ${compact 
-                ? 'text-xs line-clamp-2 sm:line-clamp-1 lg:line-clamp-2' 
-                : 'text-xs sm:text-sm line-clamp-2'
-              }
-            `}>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {description}
             </p>
           )}
-          
-          {trend && (
-            <div className={`
-              flex items-center gap-1.5 flex-wrap
-              ${compact ? 'mt-1.5 sm:mt-2' : 'mt-2 sm:mt-3'}
+        </motion.div>
+
+        {/* Change indicator */}
+        {change && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center space-x-1"
+          >
+            <TrendIcon />
+            <span className={`
+              ${config.changeSize} font-medium
+              ${change.isPositive 
+                ? 'text-emerald-600 dark:text-emerald-400' 
+                : 'text-red-600 dark:text-red-400'
+              }
             `}>
-              <span className={`
-                font-semibold tabular-nums
-                ${compact ? 'text-xs sm:text-sm' : 'text-sm lg:text-base'}
-                ${trend.isPositive 
-                  ? 'text-emerald-600 dark:text-emerald-400' 
-                  : 'text-red-600 dark:text-red-400'
-                }
-              `}>
-                {trend.isPositive ? '↗' : '↘'} {trend.isPositive ? '+' : ''}{trend.value}%
-              </span>
-              <span className={`
-                text-muted-foreground
-                ${compact 
-                  ? 'text-xs hidden sm:inline lg:hidden xl:inline' 
-                  : 'text-xs sm:text-sm'
-                }
-              `}>
-                vs прошлый период
-              </span>
-            </div>
-          )}
-        </div>
-        
-        {/* Icon container with improved sizing */}
-        <div className={`
-          ${iconBgClasses[color]}
-          flex-shrink-0 flex items-center justify-center
-          rounded-xl lg:rounded-2xl shadow-lg hover:shadow-xl
-          transition-all duration-300 ease-out
-          group-hover:scale-105 group-hover:rotate-3
-          ${compact 
-            ? 'w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14' 
-            : 'w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16'
-          }
-          ${!compact ? 'sm:order-first sm:self-start' : ''}
-        `}>
-          <Icon className={`
-            text-white drop-shadow-sm
-            ${compact 
-              ? 'h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7' 
-              : 'h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8'
-            }
-          `} />
-        </div>
+              {Math.abs(change.value)}%
+            </span>
+            <span className="text-xs text-muted-foreground">vs прошлый период</span>
+          </motion.div>
+        )}
+
+        {/* Progress bar for values with known max */}
+        {variant === 'gradient' && typeof value === 'number' && (
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: '100%' }}
+            transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
+            className="h-1 bg-gradient-to-r from-primary/20 to-primary rounded-full overflow-hidden"
+          >
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: '75%' }} // Mock progress
+              transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
+              className="h-full bg-primary rounded-full"
+            />
+          </motion.div>
+        )}
       </div>
-      
-      {/* Enhanced focus indicator */}
-      <div className="absolute inset-0 rounded-2xl lg:rounded-3xl ring-2 ring-transparent group-focus-within:ring-primary/30 transition-all duration-200" />
+
+      {/* Hover overlay */}
+      {onClick && (
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-500/5 opacity-0 hover:opacity-100 transition-opacity duration-300"
+          initial={false}
+        />
+      )}
     </motion.div>
   );
 } 
