@@ -513,10 +513,10 @@ export function Analytics() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-responsive-header font-bold gradient-text">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Аналитика
           </h1>
-          <p className="text-responsive-body text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Детальный анализ продаж, прибыли и эффективности
           </p>
         </div>
@@ -535,7 +535,7 @@ export function Analytics() {
                 onClick={() => setSelectedPeriod(period.value)}
                 className={`
                   px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg
-                  transition-all duration-200 whitespace-nowrap period-btn
+                  transition-all duration-200 whitespace-nowrap
                   ${selectedPeriod === period.value
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -556,7 +556,7 @@ export function Analytics() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 metrics-grid"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
       >
         <StatCard
           title="Общая выручка"
@@ -607,7 +607,7 @@ export function Analytics() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 charts-grid"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
       >
         {/* Revenue Chart */}
         <ChartWrapper
@@ -618,7 +618,7 @@ export function Analytics() {
           {revenueChartData.length > 0 ? (
             <AnimatedAreaChart
               data={revenueChartData}
-              height={300}
+              height={isMobile ? 250 : 300}
               keys={['revenue', 'profit']}
               index="date"
               colors={['#3B82F6', '#10B981']}
@@ -648,7 +648,7 @@ export function Analytics() {
                 value: expense.value
               }))}
               colors={COLORS}
-              height={250}
+              height={isMobile ? 200 : 250}
             />
           ) : (
             <EmptyState
@@ -676,7 +676,7 @@ export function Analytics() {
                 value: customer.total
               }))}
               onItemClick={handleCustomerClick}
-              height={250}
+              height={isMobile ? 200 : 250}
               colors={COLORS}
               valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
             />
@@ -709,8 +709,8 @@ export function Analytics() {
                 name: city.name,
                 value: city.total
               }))}
-              onItemClick={handleCityClick}
-              height={200}
+              onItemClick={isMobile ? undefined : handleCityClick}
+              height={isMobile ? 180 : 200}
               colors={COLORS}
               valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
             />
@@ -730,35 +730,35 @@ export function Analytics() {
           icon={<Package className="h-5 w-5" />}
         >
           {analyticsData.products.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {analyticsData.products.slice(0, 5).map((product: any, index: number) => (
                 <motion.div
                   key={product.name}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleProductClick(product)}
+                  className="flex items-center justify-between p-2.5 sm:p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => !isMobile && handleProductClick(product)}
                   whileHover={{ x: 4 }}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Package className="h-4 w-4 text-primary" />
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium text-sm text-foreground line-clamp-1">
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs sm:text-sm text-foreground line-clamp-1">
                         {product.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
                         {product.avgDailyConsumption.toFixed(1)} шт/день
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-foreground">
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xs sm:text-sm font-medium text-foreground">
                       #{index + 1}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground">
                       {product.totalQuantity} шт
                     </div>
                   </div>

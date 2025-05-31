@@ -132,108 +132,161 @@ export const demoProducts = [
     quantity: 45,
     createdAt: '2024-01-05T14:00:00Z',
     updatedAt: '2024-01-19T15:45:00Z'
+  },
+  // Добавляем больше разнообразных товаров
+  {
+    id: '13',
+    name: 'iPad Pro 12.9" 256GB',
+    costPriceTRY: 55000,
+    retailPriceRUB: 114900,
+    wholesalePriceRUB: 109900,
+    barcode: '194252765432',
+    quantity: 15,
+    createdAt: '2024-01-04T10:00:00Z',
+    updatedAt: '2024-01-18T14:30:00Z'
+  },
+  {
+    id: '14',
+    name: 'AirPods Pro 2',
+    costPriceTRY: 12000,
+    retailPriceRUB: 24900,
+    wholesalePriceRUB: 22900,
+    barcode: '194252987654',
+    quantity: 50,
+    createdAt: '2024-01-03T11:30:00Z',
+    updatedAt: '2024-01-20T09:15:00Z'
+  },
+  {
+    id: '15',
+    name: 'Samsung Galaxy Watch 6 Classic',
+    costPriceTRY: 15000,
+    retailPriceRUB: 32900,
+    wholesalePriceRUB: 29900,
+    barcode: '888744234567',
+    quantity: 35,
+    createdAt: '2024-01-02T08:45:00Z',
+    updatedAt: '2024-01-19T16:20:00Z'
+  },
+  {
+    id: '16',
+    name: 'MacBook Air M2 256GB',
+    costPriceTRY: 70000,
+    retailPriceRUB: 139900,
+    wholesalePriceRUB: 134900,
+    barcode: '194252345678',
+    quantity: 10,
+    createdAt: '2024-01-01T12:00:00Z',
+    updatedAt: '2024-01-17T13:45:00Z'
+  },
+  {
+    id: '17',
+    name: 'Sony WH-1000XM5',
+    costPriceTRY: 18000,
+    retailPriceRUB: 37900,
+    wholesalePriceRUB: 34900,
+    barcode: '402760123456',
+    quantity: 25,
+    createdAt: '2023-12-28T14:20:00Z',
+    updatedAt: '2024-01-16T10:30:00Z'
+  },
+  {
+    id: '18',
+    name: 'Xiaomi Mi Band 8',
+    costPriceTRY: 2500,
+    retailPriceRUB: 4990,
+    wholesalePriceRUB: 4490,
+    barcode: '692134987654',
+    quantity: 100,
+    createdAt: '2023-12-25T09:00:00Z',
+    updatedAt: '2024-01-15T11:45:00Z'
   }
 ];
 
-export const demoOrders = [
-  {
-    id: '1001',
-    customerName: 'Иван Петров',
-    orderDate: '2024-01-23',
-    status: 'shipped',
-    totalAmount: 154800,
-    createdAt: '2024-01-23T09:00:00Z',
-    updatedAt: '2024-01-23T15:30:00Z',
-    products: [
-      { name: 'iPhone 14 Pro Max 256GB', quantity: 1, price: 89900 },
-      { name: 'iPhone 13 256GB', quantity: 1, price: 64900 }
-    ]
-  },
-  {
-    id: '1002',
-    customerName: 'ООО "МобилТрейд"',
-    orderDate: '2024-01-22',
-    status: 'processing',
-    totalAmount: 849000,
-    createdAt: '2024-01-22T11:20:00Z',
-    updatedAt: '2024-01-22T11:20:00Z',
-    products: [
-      { name: 'Samsung Galaxy S23 Ultra 512GB', quantity: 10, price: 84900 }
-    ]
-  },
-  {
-    id: '1003',
-    customerName: 'Анна Сидорова',
-    orderDate: '2024-01-21',
-    status: 'delivered',
-    totalAmount: 94900,
-    createdAt: '2024-01-21T14:00:00Z',
-    updatedAt: '2024-01-22T10:15:00Z',
-    products: [
-      { name: 'iPhone 15 Pro 128GB', quantity: 1, price: 94900 }
-    ]
-  },
-  {
-    id: '1004',
-    customerName: 'ИП Козлов С.А.',
-    orderDate: '2024-01-20',
-    status: 'shipped',
-    totalAmount: 374500,
-    createdAt: '2024-01-20T16:45:00Z',
-    updatedAt: '2024-01-23T09:30:00Z',
-    products: [
-      { name: 'Google Pixel 8 Pro 256GB', quantity: 5, price: 74900 }
-    ]
-  },
-  {
-    id: '1005',
-    customerName: 'Мария Иванова',
-    orderDate: '2024-01-19',
-    status: 'processing',
-    totalAmount: 139900,
-    createdAt: '2024-01-19T10:30:00Z',
-    updatedAt: '2024-01-19T10:30:00Z',
-    products: [
-      { name: 'Samsung Galaxy Z Fold5 512GB', quantity: 1, price: 139900 }
-    ]
-  },
-  {
-    id: '1006',
-    customerName: 'ООО "ТехноПарк"',
-    orderDate: '2024-01-18',
-    status: 'delivered',
-    totalAmount: 549000,
-    createdAt: '2024-01-18T12:00:00Z',
-    updatedAt: '2024-01-20T14:20:00Z',
-    products: [
-      { name: 'OnePlus 11 256GB', quantity: 10, price: 54900 }
-    ]
-  },
-  {
-    id: '1007',
-    customerName: 'Алексей Новиков',
-    orderDate: '2024-01-17',
-    status: 'shipped',
-    totalAmount: 209700,
-    createdAt: '2024-01-17T09:15:00Z',
-    updatedAt: '2024-01-18T11:30:00Z',
-    products: [
-      { name: 'iPhone 14 128GB', quantity: 3, price: 69900 }
-    ]
-  },
-  {
-    id: '1008',
-    customerName: 'ИП Смирнова Е.В.',
-    orderDate: '2024-01-16',
-    status: 'delivered',
-    totalAmount: 599000,
-    createdAt: '2024-01-16T13:45:00Z',
-    updatedAt: '2024-01-17T16:00:00Z',
-    products: [
-      { name: 'Xiaomi 13 Pro 512GB', quantity: 10, price: 59900 }
-    ]
-  }
+// Расширенный список клиентов
+const customers = [
+  'Иван Петров',
+  'ООО "МобилТрейд"',
+  'Анна Сидорова',
+  'ИП Козлов С.А.',
+  'Мария Иванова',
+  'ООО "ТехноПарк"',
+  'Алексей Новиков',
+  'ИП Смирнова Е.В.',
+  'Сергей Федоров',
+  'ООО "ГаджетМаркет"',
+  'Елена Васильева',
+  'ИП Морозов П.Н.',
+  'Дмитрий Орлов',
+  'ООО "СмартФон"',
+  'Ольга Белова',
+  'ИП Соколов А.В.',
+  'Николай Кузнецов',
+  'ООО "АйТиШоп"',
+  'Татьяна Попова',
+  'ИП Лебедев И.С.',
+  'Андрей Волков',
+  'ООО "МегаГаджет"',
+  'Наталья Новикова',
+  'ИП Романов Д.А.',
+  'Владимир Зайцев',
+  'ООО "ТехноСити"',
+  'Екатерина Павлова',
+  'ИП Семенов В.И.',
+  'Михаил Воробьев',
+  'ООО "ДиджиталСтор"'
 ];
+
+// Генерируем больше заказов
+const generateOrders = () => {
+  const orders = [];
+  const statuses = ['shipped', 'processing', 'delivered', 'pending', 'cancelled'];
+  const cities = ['Москва', 'Санкт-Петербург', 'Казань', 'Екатеринбург', 'Новосибирск', 'Нижний Новгород', 'Челябинск', 'Самара', 'Омск', 'Ростов-на-Дону'];
+  
+  // Генерируем заказы за последние 60 дней
+  for (let i = 0; i < 150; i++) {
+    const daysAgo = Math.floor(Math.random() * 60);
+    const orderDate = new Date();
+    orderDate.setDate(orderDate.getDate() - daysAgo);
+    
+    const customer = customers[Math.floor(Math.random() * customers.length)];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    const numProducts = Math.floor(Math.random() * 3) + 1;
+    const products = [];
+    let totalAmount = 0;
+    
+    for (let j = 0; j < numProducts; j++) {
+      const product = demoProducts[Math.floor(Math.random() * demoProducts.length)];
+      const quantity = Math.floor(Math.random() * 5) + 1;
+      const price = customer.includes('ООО') || customer.includes('ИП') 
+        ? product.wholesalePriceRUB 
+        : product.retailPriceRUB;
+      
+      products.push({
+        name: product.name,
+        quantity,
+        price
+      });
+      
+      totalAmount += price * quantity;
+    }
+    
+    orders.push({
+      id: `${1001 + i}`,
+      customerName: customer,
+      orderDate: orderDate.toISOString().split('T')[0],
+      status,
+      totalAmount,
+      city: cities[Math.floor(Math.random() * cities.length)],
+      createdAt: orderDate.toISOString(),
+      updatedAt: new Date(orderDate.getTime() + Math.random() * 48 * 60 * 60 * 1000).toISOString(),
+      products
+    });
+  }
+  
+  return orders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+};
+
+export const demoOrders = generateOrders();
 
 export const demoPurchases = [
   {
@@ -335,49 +388,150 @@ export const demoExpenses = [
     amount: 25000,
     createdAt: '2024-01-10T16:00:00Z',
     updatedAt: '2024-01-10T16:00:00Z'
+  },
+  // Добавляем больше расходов
+  {
+    id: 'e7',
+    date: '2024-01-23',
+    type: 'Закупка товара',
+    description: 'Закупка Samsung Galaxy S23 Ultra партия 20шт',
+    amountRUB: 1598000,
+    createdAt: '2024-01-23T11:00:00Z',
+    updatedAt: '2024-01-23T11:00:00Z'
+  },
+  {
+    id: 'e8',
+    date: '2024-01-21',
+    type: 'Таможенные платежи',
+    description: 'Таможенное оформление груза из Турции',
+    amountRUB: 95000,
+    createdAt: '2024-01-21T14:00:00Z',
+    updatedAt: '2024-01-21T14:00:00Z'
+  },
+  {
+    id: 'e9',
+    date: '2024-01-19',
+    type: 'Налоги',
+    description: 'Авансовый платеж по налогу на прибыль',
+    amountRUB: 280000,
+    createdAt: '2024-01-19T10:00:00Z',
+    updatedAt: '2024-01-19T10:00:00Z'
+  },
+  {
+    id: 'e10',
+    date: '2024-01-17',
+    type: 'Страхование',
+    description: 'Страхование груза и складских помещений',
+    amountRUB: 65000,
+    createdAt: '2024-01-17T09:30:00Z',
+    updatedAt: '2024-01-17T09:30:00Z'
+  },
+  {
+    id: 'e11',
+    date: '2024-01-14',
+    type: 'IT и связь',
+    description: 'Подписка на CRM, 1С, интернет и телефония',
+    amountRUB: 45000,
+    createdAt: '2024-01-14T15:00:00Z',
+    updatedAt: '2024-01-14T15:00:00Z'
+  },
+  {
+    id: 'e12',
+    date: '2024-01-11',
+    type: 'Обслуживание',
+    description: 'ТО автотранспорта и складского оборудования',
+    amountRUB: 58000,
+    createdAt: '2024-01-11T12:30:00Z',
+    updatedAt: '2024-01-11T12:30:00Z'
+  },
+  {
+    id: 'e13',
+    date: '2024-01-08',
+    type: 'Юридические услуги',
+    description: 'Юридическое сопровождение и консультации',
+    amountRUB: 75000,
+    createdAt: '2024-01-08T10:00:00Z',
+    updatedAt: '2024-01-08T10:00:00Z'
+  },
+  {
+    id: 'e14',
+    date: '2024-01-05',
+    type: 'Упаковка',
+    description: 'Закупка упаковочных материалов',
+    amountRUB: 32000,
+    createdAt: '2024-01-05T16:30:00Z',
+    updatedAt: '2024-01-05T16:30:00Z'
   }
 ];
 
+// Обновленная аналитика с более реалистичными данными
 export const demoAnalytics = {
   summary: {
-    totalRevenue: 3285100,
-    totalExpenses: 2300000,
-    netProfit: 985100,
-    totalOrders: 45,
-    averageOrderValue: 73002,
+    totalRevenue: 12850000,
+    totalExpenses: 8900000,
+    netProfit: 3950000,
+    totalOrders: 150,
+    averageOrderValue: 85667,
     topProducts: [
-      { name: 'iPhone 14 Pro Max 256GB', revenue: 719200, quantity: 8 },
-      { name: 'Samsung Galaxy S23 Ultra 512GB', revenue: 594300, quantity: 7 },
-      { name: 'iPhone 15 Pro 128GB', revenue: 474500, quantity: 5 },
-      { name: 'Xiaomi 13 Pro 512GB', revenue: 389350, quantity: 6 },
-      { name: 'OnePlus 11 256GB', revenue: 329400, quantity: 6 }
+      { name: 'iPhone 14 Pro Max 256GB', revenue: 2157600, quantity: 24 },
+      { name: 'Samsung Galaxy S23 Ultra 512GB', revenue: 1867800, quantity: 22 },
+      { name: 'iPhone 15 Pro 128GB', revenue: 1518400, quantity: 16 },
+      { name: 'MacBook Air M2 256GB', revenue: 1399000, quantity: 10 },
+      { name: 'iPad Pro 12.9" 256GB', revenue: 1264900, quantity: 11 },
+      { name: 'Xiaomi 13 Pro 512GB', revenue: 973500, quantity: 15 },
+      { name: 'Google Pixel 8 Pro 256GB', revenue: 823900, quantity: 11 },
+      { name: 'OnePlus 11 256GB', revenue: 778700, quantity: 13 }
     ],
     topCustomers: [
-      { name: 'ООО "МобилТрейд"', totalSpent: 849000, orders: 3 },
-      { name: 'ИП Смирнова Е.В.', totalSpent: 599000, orders: 2 },
-      { name: 'ООО "ТехноПарк"', totalSpent: 549000, orders: 2 },
-      { name: 'ИП Козлов С.А.', totalSpent: 374500, orders: 1 },
-      { name: 'Алексей Новиков', totalSpent: 209700, orders: 2 }
+      { name: 'ООО "МобилТрейд"', totalSpent: 2847000, orders: 12 },
+      { name: 'ООО "ТехноПарк"', totalSpent: 2156000, orders: 9 },
+      { name: 'ИП Смирнова Е.В.', totalSpent: 1893000, orders: 8 },
+      { name: 'ООО "ГаджетМаркет"', totalSpent: 1652000, orders: 7 },
+      { name: 'ИП Козлов С.А.', totalSpent: 1428000, orders: 6 },
+      { name: 'ООО "СмартФон"', totalSpent: 1285000, orders: 5 },
+      { name: 'ИП Морозов П.Н.', totalSpent: 1124000, orders: 5 },
+      { name: 'ООО "АйТиШоп"', totalSpent: 987000, orders: 4 }
     ]
   },
   charts: {
-    dailyRevenue: [
-      { date: '2024-01-17', revenue: 325000 },
-      { date: '2024-01-18', revenue: 438000 },
-      { date: '2024-01-19', revenue: 289000 },
-      { date: '2024-01-20', revenue: 512000 },
-      { date: '2024-01-21', revenue: 478000 },
-      { date: '2024-01-22', revenue: 695000 },
-      { date: '2024-01-23', revenue: 548100 }
-    ],
+    dailyRevenue: generateDailyRevenue(),
     categoryBreakdown: [
-      { category: 'Флагманы Apple', revenue: 1667700, percentage: 51 },
-      { category: 'Флагманы Samsung', revenue: 818900, percentage: 25 },
-      { category: 'Средний сегмент', revenue: 658750, percentage: 20 },
-      { category: 'Бюджетные смартфоны', revenue: 139750, percentage: 4 }
+      { category: 'Флагманы Apple', revenue: 6810900, percentage: 53 },
+      { category: 'Флагманы Samsung', revenue: 2827500, percentage: 22 },
+      { category: 'Средний сегмент', revenue: 2056100, percentage: 16 },
+      { category: 'Аксессуары', revenue: 770200, percentage: 6 },
+      { category: 'Бюджетные устройства', revenue: 385300, percentage: 3 }
+    ],
+    monthlyGrowth: [
+      { month: 'Ноябрь', revenue: 8500000, profit: 2550000 },
+      { month: 'Декабрь', revenue: 10200000, profit: 3060000 },
+      { month: 'Январь', revenue: 12850000, profit: 3950000 }
     ]
   }
 };
+
+// Функция генерации дневной выручки за последние 30 дней
+function generateDailyRevenue() {
+  const revenue = [];
+  const today = new Date();
+  
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    
+    // Генерируем выручку с учетом выходных (меньше продаж)
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    const baseRevenue = isWeekend ? 250000 : 450000;
+    const variance = Math.random() * 200000 - 100000;
+    
+    revenue.push({
+      date: date.toISOString().split('T')[0],
+      revenue: Math.round(baseRevenue + variance)
+    });
+  }
+  
+  return revenue;
+}
 
 // Функция для имитации задержки API
 export const simulateDelay = (ms: number = 300) => 
