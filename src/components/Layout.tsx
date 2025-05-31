@@ -12,41 +12,6 @@ interface LayoutProps {
   onExitDemo?: () => void;
 }
 
-// Demo banner component
-const DemoBanner = ({ onClose }: { onClose: () => void }) => (
-  <div className="relative top-0 left-0 right-0 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white py-2 sm:py-3 px-3 sm:px-4 text-center z-[60] shadow-lg border-b border-amber-400/30">
-    <div className="flex items-center justify-between max-w-7xl mx-auto">
-      <div className="flex items-center justify-center gap-2 sm:gap-3 flex-1">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="relative">
-            <PlayCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-100" />
-            <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-orange-300 animate-ping" />
-          </div>
-          <div className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-400/20 rounded-full border border-amber-300/30">
-            <span className="text-[10px] sm:text-xs font-bold text-amber-100 tracking-wider">DEMO</span>
-          </div>
-        </div>
-        <div className="hidden sm:block w-px h-3 sm:h-4 bg-amber-300/40" />
-        <div className="text-xs sm:text-sm font-medium">
-          <span className="hidden sm:inline">Демо режим активен • </span>
-          <span className="text-amber-100">Данные тестовые</span>
-        </div>
-        <div className="hidden md:flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-amber-100/80">
-          <div className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-amber-300/60" />
-          <span>Изменения не сохраняются</span>
-        </div>
-      </div>
-      <button
-        onClick={onClose}
-        className="p-1 sm:p-1.5 hover:bg-amber-400/20 rounded-lg transition-colors group ml-1 sm:ml-2"
-        title="Выйти из демо режима"
-      >
-        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-100 group-hover:text-white transition-colors" />
-      </button>
-    </div>
-  </div>
-);
-
 export function Layout({ children, isDemoMode = false, onExitDemo }: LayoutProps) {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
@@ -60,9 +25,6 @@ export function Layout({ children, isDemoMode = false, onExitDemo }: LayoutProps
   
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Demo Banner */}
-      {isDemoMode && onExitDemo && <DemoBanner onClose={onExitDemo} />}
-      
       {/* Main Layout Container */}
       <div className="flex flex-1">
         {/* Background gradient effects */}
