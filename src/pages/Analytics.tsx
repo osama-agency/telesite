@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
+  BarChart3, 
   TrendingUp, 
+  TrendingDown, 
   DollarSign, 
   ShoppingCart, 
-  Users, 
-  MapPin, 
-  Calendar,
-  BarChart3,
+  Users,
   PieChart,
   Activity,
+  MapPin,
   Package
 } from 'lucide-react';
 import { StatCard } from '../components/ui/StatCard';
@@ -21,22 +21,12 @@ import {
   AnimatedAreaChart, 
   AnimatedPieChart,
   AnimatedLineChart,
-  LeaderboardChart,
-  type ChartWrapperProps,
-  type AnimatedAreaChartProps,
-  type AnimatedLineChartProps,
-  type AnimatedPieChartProps,
-  type LeaderboardChartProps
+  LeaderboardChart
 } from '../components/charts';
 import { useResponsive } from '../hooks/useResponsive';
 import axios from 'axios';
 import { EmptyState } from '../components/ui/EmptyState';
-
-// Demo data import for demo mode
-import { demoAnalytics, demoOrders, demoExpenses } from '../data/demoData';
-
-// Check if we're in demo mode
-const isDemoMode = () => typeof window !== 'undefined' && window.isDemoMode === true;
+import { cn } from '../lib/utils';
 
 interface PeriodFilter {
   label: string;
@@ -81,7 +71,7 @@ interface SummaryMetrics {
 
 export function Analytics() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('30d');
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     profit: [],
     purchases: [],
@@ -97,10 +87,26 @@ export function Analytics() {
 
   // Helper function to parse order date
   const parseOrderDate = (dateString: string) => {
-    // Format: "28.05.2025 15:31:51"
-    const [datePart, timePart] = dateString.split(' ');
-    const [day, month, year] = datePart.split('.');
-    return new Date(`${year}-${month}-${day}T${timePart}`);
+    // Check if it's ISO format (demo data)
+    if (dateString.includes('-') && dateString.includes('T')) {
+      return new Date(dateString);
+    }
+    
+    // Check if it's just a date without time (YYYY-MM-DD)
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return new Date(dateString + 'T00:00:00');
+    }
+    
+    // Original format: "28.05.2025 15:31:51"
+    const parts = dateString.split(' ');
+    if (parts.length === 2) {
+      const [datePart, timePart] = parts;
+      const [day, month, year] = datePart.split('.');
+      return new Date(`${year}-${month}-${day}T${timePart}`);
+    }
+    
+    // Fallback - try to parse as is
+    return new Date(dateString);
   };
 
   // Helper function to translate order status to Russian
@@ -123,7 +129,7 @@ export function Analytics() {
 
   // Calculate date range based on selected period
   const getDateRange = (periodValue: string) => {
-    const now = new Date();
+    const now = new Date('2025-05-29'); // Use current date from screenshot
     const period = periodFilters.find(p => p.value === periodValue);
     if (!period) return { from: '', to: '' };
     
@@ -146,68 +152,189 @@ export function Analytics() {
     };
   };
 
+  // Generate demo orders for different date ranges
+  const generateDemoOrders = () => {
+    const orders = [];
+    const products = [
+      { name: 'iPhone 15 Pro 256GB', price: 89900 },
+      { name: 'iPhone 15 Pro Max 512GB', price: 94900 },
+      { name: 'Samsung Galaxy S24 Ultra', price: 79900 },
+      { name: 'MacBook Air M3', price: 119900 },
+      { name: 'AirPods Pro 2', price: 54900 },
+      { name: 'iPad Pro 12.9"', price: 84900 },
+      { name: 'iPhone 14 Pro 128GB', price: 69900 },
+      { name: 'MacBook Pro 14"', price: 134900 },
+      { name: 'Apple Watch Series 9', price: 44900 },
+      { name: 'Samsung Galaxy Watch 6', price: 32900 },
+      { name: 'Google Pixel 8 Pro', price: 74900 },
+      { name: 'Xiaomi Redmi Buds 4', price: 19900 },
+      { name: 'Samsung Galaxy Tab S9 Ultra', price: 99900 },
+      { name: 'OnePlus 12', price: 59900 },
+      { name: 'Nothing Phone (2)', price: 49900 }
+    ];
+    
+    const customers = [
+      { name: 'ООО "ТехноМир"', address: 'Москва, ул. Ленина 15' },
+      { name: 'Иван Петров', address: 'Санкт-Петербург, пр. Невский 100' },
+      { name: 'ИП Сидоров А.В.', address: 'Казань, ул. Баумана 45' },
+      { name: 'Анна Смирнова', address: 'Екатеринбург, ул. Малышева 30' },
+      { name: 'ООО "МегаТрейд"', address: 'Новосибирск, пр. Красный 78' },
+      { name: 'Сергей Иванов', address: 'Москва, ул. Тверская 25' },
+      { name: 'Елена Васильева', address: 'Санкт-Петербург, ул. Садовая 50' },
+      { name: 'ИП Козлов Д.С.', address: 'Ростов-на-Дону, пр. Ворошиловский 20' },
+      { name: 'ООО "ГаджетСтор"', address: 'Челябинск, ул. Кирова 88' },
+      { name: 'Михаил Новиков', address: 'Москва, ул. Арбат 10' },
+      { name: 'Ольга Федорова', address: 'Самара, ул. Молодогвардейская 60' },
+      { name: 'ИП Морозов П.Н.', address: 'Омск, пр. Мира 35' },
+      { name: 'ООО "СмартТех"', address: 'Нижний Новгород, ул. Большая Покровская 20' },
+      { name: 'Дмитрий Волков', address: 'Краснодар, ул. Красная 135' },
+      { name: 'ООО "АйФонСервис"', address: 'Москва, ул. Профсоюзная 45' }
+    ];
+    
+    const statuses = ['shipped', 'delivered', 'processing'];
+    
+    // Generate orders for the current date (May 2025) and backwards
+    const currentDate = new Date('2025-05-29'); // Set to current date shown in screenshot
+    
+    for (let i = 0; i < 200; i++) {
+      const daysAgo = Math.floor(Math.random() * 365);
+      const orderDate = new Date(currentDate.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+      const product = products[Math.floor(Math.random() * products.length)];
+      const customer = customers[Math.floor(Math.random() * customers.length)];
+      const quantity = Math.floor(Math.random() * 10) + 1;
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      
+      const hours = Math.floor(Math.random() * 24);
+      const minutes = Math.floor(Math.random() * 60);
+      const seconds = Math.floor(Math.random() * 60);
+      
+      const day = orderDate.getDate().toString().padStart(2, '0');
+      const month = (orderDate.getMonth() + 1).toString().padStart(2, '0');
+      const year = orderDate.getFullYear();
+      const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      orders.push({
+        id: `demo-${i}`,
+        paymentDate: `${day}.${month}.${year} ${timeStr}`,
+        customerName: customer.name,
+        address: customer.address,
+        quantity: quantity,
+        price: product.price,
+        productName: product.name,
+        status: status
+      });
+    }
+    
+    return orders.sort((a, b) => {
+      const dateA = parseOrderDate(a.paymentDate);
+      const dateB = parseOrderDate(b.paymentDate);
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
+
+  // Generate demo expenses for different date ranges
+  const generateDemoExpenses = () => {
+    const expenses = [];
+    const types = [
+      { type: 'Закупка товара', descriptions: ['Закупка iPhone партия', 'Закупка Samsung партия', 'Закупка MacBook партия'], minAmount: 1000000, maxAmount: 5000000 },
+      { type: 'Логистика', descriptions: ['Доставка из Турции', 'Доставка из Китая', 'Таможенное оформление'], minAmount: 50000, maxAmount: 300000 },
+      { type: 'ФОТ', descriptions: ['Зарплата сотрудников', 'Премии', 'Страховые взносы'], minAmount: 300000, maxAmount: 600000 },
+      { type: 'Реклама', descriptions: ['Яндекс.Директ', 'Google Ads', 'SMM продвижение'], minAmount: 50000, maxAmount: 200000 },
+      { type: 'Прочее', descriptions: ['Аренда офиса и склада', 'Коммунальные услуги', 'Канцелярия'], minAmount: 50000, maxAmount: 300000 }
+    ];
+    
+    const currentDate = new Date('2025-05-29'); // Set to current date shown in screenshot
+    
+    for (let i = 0; i < 50; i++) {
+      const daysAgo = Math.floor(Math.random() * 365);
+      const expenseDate = new Date(currentDate.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+      const typeData = types[Math.floor(Math.random() * types.length)];
+      const description = typeData.descriptions[Math.floor(Math.random() * typeData.descriptions.length)];
+      const amount = Math.floor(Math.random() * (typeData.maxAmount - typeData.minAmount)) + typeData.minAmount;
+      
+      expenses.push({
+        id: `exp-${i}`,
+        date: expenseDate.toISOString().split('T')[0],
+        type: typeData.type,
+        description: description,
+        amountRUB: amount
+      });
+    }
+    
+    return expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
   // Fetch analytics data
   const fetchAnalyticsData = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-      
       // Check if we're in demo mode
-      if (isDemoMode()) {
-        // Use demo data
+      if (window.isDemoMode) {
+        // Generate demo data
         const { from, to } = getDateRange(selectedPeriod);
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
         
-        // Filter demo orders by selected period
-        const filteredOrders = demoOrders.filter((order: any) => {
-          const orderDate = new Date(order.orderDate);
-          const fromDate = new Date(from);
-          const toDate = new Date(to);
+        // Demo orders
+        const demoOrders = generateDemoOrders();
+        
+        // Demo expenses
+        const demoExpenses = generateDemoExpenses();
+        
+        // Filter orders by date range
+        const filteredOrders = demoOrders.filter(order => {
+          const orderDate = parseOrderDate(order.paymentDate);
           return orderDate >= fromDate && orderDate <= toDate;
         });
-
-        // Filter demo expenses by selected period
-        const filteredExpenses = demoExpenses.filter((expense: any) => {
+        
+        // Filter expenses by date range
+        const filteredExpenses = demoExpenses.filter(expense => {
           const expenseDate = new Date(expense.date);
-          const fromDate = new Date(from);
-          const toDate = new Date(to);
           return expenseDate >= fromDate && expenseDate <= toDate;
         });
         
-        // Calculate top customers with orders
+        // Calculate analytics from demo data
         const customerStats = filteredOrders.reduce((acc: any, order: any) => {
-          const total = order.totalAmount;
-          const cleanName = order.customerName;
-          if (!acc[cleanName]) {
-            acc[cleanName] = { name: cleanName, total: 0, orders: 0 };
+          const total = order.quantity * order.price;
+          if (!acc[order.customerName]) {
+            acc[order.customerName] = { name: order.customerName, total: 0, orders: 0 };
           }
-          acc[cleanName].total += total;
-          acc[cleanName].orders += 1;
+          acc[order.customerName].total += total;
+          acc[order.customerName].orders += 1;
           return acc;
         }, {});
         
         const topCustomers = Object.values(customerStats)
           .sort((a: any, b: any) => b.total - a.total)
           .slice(0, 5);
-
-        // Mock cities for demo
-        const topCities = [
-          { name: 'Москва', total: 1850000, orders: 25 },
-          { name: 'Санкт-Петербург', total: 850000, orders: 12 },
-          { name: 'Казань', total: 450000, orders: 8 }
-        ];
-
-        // Calculate top products from orders
-        const productStats = filteredOrders.reduce((acc: any, order: any) => {
-          order.products.forEach((product: any) => {
-            if (!acc[product.name]) {
-              acc[product.name] = { name: product.name, totalQuantity: 0, orders: 0 };
-            }
-            acc[product.name].totalQuantity += product.quantity;
-            acc[product.name].orders += 1;
-          });
+        
+        const cityStats = filteredOrders.reduce((acc: any, order: any) => {
+          const city = order.address.split(',')[0]?.trim() || 'Неизвестно';
+          const total = order.quantity * order.price;
+          if (!acc[city]) {
+            acc[city] = { name: city, total: 0, orders: 0 };
+          }
+          acc[city].total += total;
+          acc[city].orders += 1;
           return acc;
         }, {});
-
+        
+        const topCities = Object.values(cityStats)
+          .sort((a: any, b: any) => b.total - a.total)
+          .slice(0, 3);
+        
+        const productStats = filteredOrders.reduce((acc: any, order: any) => {
+          const productName = order.productName;
+          if (!acc[productName]) {
+            acc[productName] = { name: productName, totalQuantity: 0, orders: 0 };
+          }
+          acc[productName].totalQuantity += order.quantity;
+          acc[productName].orders += 1;
+          return acc;
+        }, {});
+        
         const period = periodFilters.find(p => p.value === selectedPeriod);
         const daysInPeriod = period ? period.days : 30;
         
@@ -220,23 +347,12 @@ export function Analytics() {
           }))
           .sort((a: any, b: any) => b.avgDailyConsumption - a.avgDailyConsumption)
           .slice(0, 5);
-
+        
         setAnalyticsData({
-          profit: demoAnalytics.charts.dailyRevenue.map(d => ({
-            period: d.date,
-            revenue: d.revenue,
-            netProfit: d.revenue * 0.3 // 30% profit margin
-          })),
+          profit: [],
           purchases: [],
           expenses: filteredExpenses,
-          orders: filteredOrders.map((order: any) => ({
-            ...order,
-            paymentDate: order.orderDate + ' 12:00:00',
-            address: 'Москва, ул. Примерная, д. 1',
-            price: order.totalAmount / order.products.reduce((sum: number, p: any) => sum + p.quantity, 0),
-            quantity: order.products.reduce((sum: number, p: any) => sum + p.quantity, 0),
-            productName: order.products[0]?.name || 'Товар'
-          })),
+          orders: filteredOrders,
           customers: topCustomers,
           cities: topCities,
           products: topProducts
@@ -503,52 +619,52 @@ export function Analytics() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="analytics-container space-y-6 lg:space-y-8"
+      className="w-full min-w-0 space-y-6 sm:space-y-8 lg:space-y-10"
     >
       {/* Header */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+        className="w-full"
       >
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Аналитика
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-2">
-            Детальный анализ продаж, прибыли и эффективности
-          </p>
-        </div>
-
-        {/* Period filter */}
-        <motion.div
-          initial={{ x: 20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="period-filter-container"
-        >
-          <div className="flex flex-wrap gap-2 p-1 bg-muted/30 rounded-xl border border-border/50">
-            {periodFilters.map((period) => (
-              <motion.button
-                key={period.value}
-                onClick={() => setSelectedPeriod(period.value)}
-                className={`
-                  px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg
-                  transition-all duration-200 whitespace-nowrap
-                  ${selectedPeriod === period.value
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }
-                `}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {period.label}
-              </motion.button>
-            ))}
+        <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              Аналитика
+            </h1>
+            <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1 sm:mt-2">
+              Детальный анализ продаж, прибыли и эффективности
+            </p>
           </div>
-        </motion.div>
+
+          {/* Period filter */}
+          <motion.div
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="w-full sm:w-auto flex-shrink-0"
+          >
+            <div className="inline-flex flex-wrap gap-1 p-1 bg-muted/30 rounded-xl border w-full sm:w-auto">
+              {periodFilters.map((period) => (
+                <button
+                  key={period.value}
+                  onClick={() => setSelectedPeriod(period.value)}
+                  className={`
+                    flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg
+                    transition-all whitespace-nowrap focus-ring min-w-0
+                    ${selectedPeriod === period.value
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }
+                  `}
+                >
+                  {period.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
 
       {/* Metrics Grid */}
@@ -556,7 +672,7 @@ export function Analytics() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
+        className="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
       >
         <StatCard
           title="Общая выручка"
@@ -607,88 +723,98 @@ export function Analytics() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
+        className="w-full grid gap-6 sm:gap-8 lg:gap-10"
       >
-        {/* Revenue Chart */}
-        <ChartWrapper
-          title="Динамика доходов"
-          icon={<BarChart3 className="h-5 w-5" />}
-          className="lg:col-span-2"
-        >
-          {revenueChartData.length > 0 ? (
-            <AnimatedAreaChart
-              data={revenueChartData}
-              height={isMobile ? 250 : 300}
-              keys={['revenue', 'profit']}
-              index="date"
-              colors={['#3B82F6', '#10B981']}
-              legends={['Выручка', 'Прибыль']}
-            />
-          ) : (
-            <EmptyState
-              type="analytics"
-              message="Нет данных о доходах"
-              description="Данные появятся после первых продаж"
-              size="sm"
-              showIllustration={false}
-            />
-          )}
-        </ChartWrapper>
+        {/* Revenue Chart - Full Width */}
+        <div className="w-full">
+          <ChartWrapper
+            title="Динамика доходов"
+            icon={<BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />}
+          >
+            {revenueChartData.length > 0 ? (
+              <div className="w-full overflow-hidden">
+                <AnimatedAreaChart
+                  data={revenueChartData}
+                  height={isMobile ? 250 : isTablet ? 300 : 350}
+                  keys={['revenue', 'profit']}
+                  index="date"
+                  colors={['#3B82F6', '#10B981']}
+                  legends={['Выручка', 'Прибыль']}
+                />
+              </div>
+            ) : (
+              <EmptyState
+                type="analytics"
+                message="Нет данных о доходах"
+                description="Данные появятся после первых продаж"
+                size="sm"
+                showIllustration={false}
+              />
+            )}
+          </ChartWrapper>
+        </div>
 
-        {/* Expenses Chart */}
-        <ChartWrapper
-          title="Структура расходов"
-          icon={<PieChart className="h-5 w-5" />}
-        >
-          {expensesChartData.some((item: any) => item.value > 0) ? (
-            <AnimatedPieChart
-              data={expensesChartData.map((expense: any) => ({
-                id: expense.name,
-                label: expense.name,
-                value: expense.value
-              }))}
-              colors={COLORS}
-              height={isMobile ? 200 : 250}
-            />
-          ) : (
-            <EmptyState
-              type="analytics"
-              message="Нет данных о расходах"
-              description="Добавьте расходы в соответствующем разделе"
-              size="sm"
-              action={{
-                label: "Добавить расход",
-                onClick: () => navigate('/expenses')
-              }}
-            />
-          )}
-        </ChartWrapper>
+        {/* Two Column Charts */}
+        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
+          {/* Expenses Chart */}
+          <ChartWrapper
+            title="Структура расходов"
+            icon={<PieChart className="h-4 w-4 sm:h-5 sm:w-5" />}
+          >
+            {expensesChartData.some((item: any) => item.value > 0) ? (
+              <div className="w-full overflow-hidden">
+                <AnimatedPieChart
+                  data={expensesChartData.map((expense: any) => ({
+                    id: expense.name,
+                    label: expense.name,
+                    value: expense.value
+                  }))}
+                  colors={COLORS}
+                  height={isMobile ? 200 : 300}
+                />
+              </div>
+            ) : (
+              <EmptyState
+                type="analytics"
+                message="Нет данных о расходах"
+                description="Добавьте расходы в соответствующем разделе"
+                size="sm"
+                action={{
+                  label: "Добавить расход",
+                  onClick: () => navigate('/expenses')
+                }}
+              />
+            )}
+          </ChartWrapper>
 
-        {/* Top Customers */}
-        <ChartWrapper
-          title="Топ клиенты"
-          icon={<Users className="h-5 w-5" />}
-        >
-          {analyticsData.customers.length > 0 ? (
-            <LeaderboardChart
-              data={analyticsData.customers.map((customer: any, index: number) => ({
-                name: customer.name,
-                value: customer.total
-              }))}
-              onItemClick={handleCustomerClick}
-              height={isMobile ? 200 : 250}
-              colors={COLORS}
-              valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
-            />
-          ) : (
-            <EmptyState
-              type="customers"
-              message="Нет данных о клиентах"
-              description="Клиенты появятся после первых заказов"
-              size="sm"
-            />
-          )}
-        </ChartWrapper>
+          {/* Top Customers */}
+          <ChartWrapper
+            title="Топ клиенты"
+            icon={<Users className="h-4 w-4 sm:h-5 sm:w-5" />}
+          >
+            {analyticsData.customers.length > 0 ? (
+              <div className="w-full overflow-hidden">
+                <LeaderboardChart
+                  data={analyticsData.customers.map((customer: any) => ({
+                    name: customer.name,
+                    value: customer.total
+                  }))}
+                  onItemClick={handleCustomerClick}
+                  height={isMobile ? 200 : 300}
+                  colors={COLORS}
+                  valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
+                />
+              </div>
+            ) : (
+              <EmptyState
+                type="customers"
+                message="Нет данных о клиентах"
+                description="Клиенты появятся после первых заказов"
+                size="sm"
+              />
+            )}
+          </ChartWrapper>
+        </div>
       </motion.div>
 
       {/* Additional Charts */}
@@ -696,24 +822,26 @@ export function Analytics() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
+        className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10"
       >
         {/* Top Cities */}
         <ChartWrapper
           title="География продаж"
-          icon={<MapPin className="h-5 w-5" />}
+          icon={<MapPin className="h-4 w-4 sm:h-5 sm:w-5" />}
         >
           {analyticsData.cities.length > 0 ? (
-            <LeaderboardChart
-              data={analyticsData.cities.map((city: any) => ({
-                name: city.name,
-                value: city.total
-              }))}
-              onItemClick={isMobile ? undefined : handleCityClick}
-              height={isMobile ? 180 : 200}
-              colors={COLORS}
-              valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
-            />
+            <div className="w-full overflow-hidden">
+              <LeaderboardChart
+                data={analyticsData.cities.map((city: any) => ({
+                  name: city.name,
+                  value: city.total
+                }))}
+                onItemClick={isMobile ? undefined : handleCityClick}
+                height={isMobile ? 180 : 250}
+                colors={COLORS}
+                valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
+              />
+            </div>
           ) : (
             <EmptyState
               type="analytics"
@@ -727,38 +855,40 @@ export function Analytics() {
         {/* Top Products */}
         <ChartWrapper
           title="Популярные товары"
-          icon={<Package className="h-5 w-5" />}
+          icon={<Package className="h-4 w-4 sm:h-5 sm:w-5" />}
         >
           {analyticsData.products.length > 0 ? (
-            <div className="space-y-2 sm:space-y-3">
+            <div className="w-full space-y-2 sm:space-y-3">
               {analyticsData.products.slice(0, 5).map((product: any, index: number) => (
                 <motion.div
                   key={product.name}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-2.5 sm:p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  className={`
+                    flex items-center justify-between gap-3 p-3 sm:p-4
+                    rounded-lg bg-muted/30 hover:bg-muted/50 
+                    transition-colors cursor-pointer group min-w-0
+                  `}
                   onClick={() => !isMobile && handleProductClick(product)}
                   whileHover={{ x: 4 }}
                 >
-                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
+                      <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-xs sm:text-sm text-foreground line-clamp-1">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm sm:text-base font-medium truncate">
                         {product.name}
                       </p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {product.avgDailyConsumption.toFixed(1)} шт/день
                       </p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-xs sm:text-sm font-medium text-foreground">
-                      #{index + 1}
-                    </div>
-                    <div className="text-[10px] sm:text-xs text-muted-foreground">
+                    <div className="text-sm sm:text-base font-medium">#{index + 1}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">
                       {product.totalQuantity} шт
                     </div>
                   </div>

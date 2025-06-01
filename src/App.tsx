@@ -22,26 +22,16 @@ declare global {
 
 // Защищенный Layout с проверкой демо-режима
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isDemoMode, setIsDemoMode] = useState(false);
-
   useEffect(() => {
     // Проверяем роль пользователя из localStorage
     const userRole = localStorage.getItem('userRole');
     const isDemo = userRole === 'demo';
-    setIsDemoMode(isDemo);
     window.isDemoMode = isDemo;
   }, []);
 
-  const handleExitDemo = () => {
-    // Выход из демо = выход из системы
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userEmail');
-    window.location.href = '/login';
-  };
-
   return (
     <ProtectedRoute>
-      <Layout isDemoMode={isDemoMode} onExitDemo={handleExitDemo}>
+      <Layout>
         {children}
       </Layout>
     </ProtectedRoute>

@@ -21,6 +21,49 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
+const colorVariants = {
+  primary: {
+    gradient: 'from-blue-500/10 to-indigo-500/10',
+    iconBg: 'bg-blue-500/10',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    border: 'border-blue-200/50 dark:border-blue-800/50',
+    changePositive: 'text-emerald-600 dark:text-emerald-400',
+    changeNegative: 'text-red-600 dark:text-red-400'
+  },
+  success: {
+    gradient: 'from-emerald-500/10 to-green-500/10',
+    iconBg: 'bg-emerald-500/10',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    border: 'border-emerald-200/50 dark:border-emerald-800/50',
+    changePositive: 'text-emerald-600 dark:text-emerald-400',
+    changeNegative: 'text-red-600 dark:text-red-400'
+  },
+  warning: {
+    gradient: 'from-amber-500/10 to-yellow-500/10',
+    iconBg: 'bg-amber-500/10',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    border: 'border-amber-200/50 dark:border-amber-800/50',
+    changePositive: 'text-emerald-600 dark:text-emerald-400',
+    changeNegative: 'text-red-600 dark:text-red-400'
+  },
+  danger: {
+    gradient: 'from-red-500/10 to-rose-500/10',
+    iconBg: 'bg-red-500/10',
+    iconColor: 'text-red-600 dark:text-red-400',
+    border: 'border-red-200/50 dark:border-red-800/50',
+    changePositive: 'text-emerald-600 dark:text-emerald-400',
+    changeNegative: 'text-red-600 dark:text-red-400'
+  },
+  info: {
+    gradient: 'from-cyan-500/10 to-blue-500/10',
+    iconBg: 'bg-cyan-500/10',
+    iconColor: 'text-cyan-600 dark:text-cyan-400',
+    border: 'border-cyan-200/50 dark:border-cyan-800/50',
+    changePositive: 'text-emerald-600 dark:text-emerald-400',
+    changeNegative: 'text-red-600 dark:text-red-400'
+  }
+};
+
 export function StatCard({
   title,
   value,
@@ -36,70 +79,30 @@ export function StatCard({
   sparkline,
   onClick
 }: StatCardProps) {
+  const colorConfig = colorVariants[color];
   
-  // Color schemes for different variants
-  const colorSchemes = {
-    primary: {
-      gradient: 'from-blue-500/10 via-purple-500/10 to-blue-500/10',
-      border: 'border-blue-200/50 dark:border-blue-800/50',
-      icon: 'text-blue-600 dark:text-blue-400',
-      accent: 'text-blue-600 dark:text-blue-400',
-      bg: 'bg-blue-50/50 dark:bg-blue-900/20'
-    },
-    success: {
-      gradient: 'from-emerald-500/10 via-green-500/10 to-emerald-500/10',
-      border: 'border-emerald-200/50 dark:border-emerald-800/50',
-      icon: 'text-emerald-600 dark:text-emerald-400',
-      accent: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-emerald-50/50 dark:bg-emerald-900/20'
-    },
-    warning: {
-      gradient: 'from-amber-500/10 via-yellow-500/10 to-amber-500/10',
-      border: 'border-amber-200/50 dark:border-amber-800/50',
-      icon: 'text-amber-600 dark:text-amber-400',
-      accent: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-50/50 dark:bg-amber-900/20'
-    },
-    danger: {
-      gradient: 'from-red-500/10 via-pink-500/10 to-red-500/10',
-      border: 'border-red-200/50 dark:border-red-800/50',
-      icon: 'text-red-600 dark:text-red-400',
-      accent: 'text-red-600 dark:text-red-400',
-      bg: 'bg-red-50/50 dark:bg-red-900/20'
-    },
-    info: {
-      gradient: 'from-cyan-500/10 via-sky-500/10 to-cyan-500/10',
-      border: 'border-cyan-200/50 dark:border-cyan-800/50',
-      icon: 'text-cyan-600 dark:text-cyan-400',
-      accent: 'text-cyan-600 dark:text-cyan-400',
-      bg: 'bg-cyan-50/50 dark:bg-cyan-900/20'
-    }
-  };
-
-  const scheme = colorSchemes[color];
-
-  // Size configurations
+  // Responsive size configurations
   const sizeConfig = {
     sm: {
-      padding: 'p-4',
-      iconSize: 'h-5 w-5',
-      titleSize: 'text-xs',
-      valueSize: 'text-lg',
-      changeSize: 'text-xs'
+      padding: 'p-3 sm:p-4',
+      iconSize: 'h-4 w-4 sm:h-5 sm:w-5',
+      titleSize: 'text-xs sm:text-sm',
+      valueSize: 'text-lg sm:text-xl',
+      changeSize: 'text-[10px] sm:text-xs'
     },
     md: {
-      padding: 'p-5 sm:p-6',
-      iconSize: 'h-6 w-6',
-      titleSize: 'text-sm',
-      valueSize: 'text-xl sm:text-2xl',
-      changeSize: 'text-sm'
+      padding: 'p-4 sm:p-5 lg:p-6',
+      iconSize: 'h-5 w-5 sm:h-6 sm:w-6',
+      titleSize: 'text-xs sm:text-sm',
+      valueSize: 'text-xl sm:text-2xl lg:text-3xl',
+      changeSize: 'text-xs sm:text-sm'
     },
     lg: {
-      padding: 'p-6 sm:p-8',
-      iconSize: 'h-7 w-7',
-      titleSize: 'text-base',
-      valueSize: 'text-2xl sm:text-3xl',
-      changeSize: 'text-base'
+      padding: 'p-5 sm:p-6 lg:p-8',
+      iconSize: 'h-6 w-6 sm:h-7 sm:w-7',
+      titleSize: 'text-sm sm:text-base',
+      valueSize: 'text-2xl sm:text-3xl lg:text-4xl',
+      changeSize: 'text-sm sm:text-base'
     }
   };
 
@@ -143,7 +146,7 @@ export function StatCard({
     const isPositiveTrend = data[data.length - 1] > data[0];
     
     return (
-      <div className="absolute bottom-0 right-0 w-16 h-8 opacity-50">
+      <div className="absolute bottom-0 right-0 w-12 h-6 sm:w-16 sm:h-8 opacity-20 sm:opacity-30">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <polyline
             fill="none"
@@ -171,17 +174,15 @@ export function StatCard({
   if (loading) {
     return (
       <div className={`
-        bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl 
-        rounded-xl sm:rounded-2xl border border-border/50 
-        ${config.padding} shadow-sm
+        glass rounded-xl sm:rounded-2xl ${config.padding} animate-pulse
       `}>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="skeleton h-4 w-20 rounded-md" />
-            <div className="skeleton h-5 w-5 rounded-md" />
+            <div className="h-3 w-16 sm:h-4 sm:w-20 rounded bg-muted/50" />
+            <div className="h-5 w-5 rounded bg-muted/50" />
           </div>
-          <div className="skeleton h-8 w-24 rounded-md" />
-          <div className="skeleton h-3 w-16 rounded-md" />
+          <div className="h-6 w-20 sm:h-8 sm:w-24 rounded bg-muted/50" />
+          <div className="h-3 w-14 sm:w-16 rounded bg-muted/50" />
         </div>
       </div>
     );
@@ -189,29 +190,26 @@ export function StatCard({
 
   // Base card classes
   const baseClasses = `
-    relative overflow-hidden transition-all duration-300
-    ${config.padding} shadow-sm hover:shadow-md
+    relative overflow-hidden transition-all duration-300 ${config.padding}
     ${onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' : ''}
   `;
 
   // Variant-specific classes
   const variantClasses = {
     default: `
-      bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl 
-      rounded-xl sm:rounded-2xl border border-border/50
-      hover:border-border/70
+      glass glass-border rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md
     `,
     gradient: `
-      bg-gradient-to-br ${scheme.gradient} backdrop-blur-xl
-      rounded-xl sm:rounded-2xl border ${scheme.border}
-      hover:shadow-lg hover:shadow-primary/10
+      bg-gradient-to-br ${colorConfig.gradient} backdrop-blur-xl
+      rounded-xl sm:rounded-2xl border ${colorConfig.border}
+      shadow-sm hover:shadow-lg hover:shadow-primary/10
     `,
     outline: `
       bg-transparent rounded-xl sm:rounded-2xl 
-      border-2 ${scheme.border} hover:${scheme.bg}
+      border-2 ${colorConfig.border} hover:${colorConfig.iconBg}
     `,
     minimal: `
-      bg-transparent rounded-lg hover:bg-muted/50
+      bg-transparent rounded-lg hover:bg-muted/30
       border-0
     `
   };
@@ -229,16 +227,16 @@ export function StatCard({
       {/* Background decoration */}
       {variant === 'gradient' && (
         <div className="absolute inset-0 opacity-30">
-          <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${scheme.gradient} blur-3xl`} />
+          <div className={`absolute -top-16 -right-16 w-32 h-32 bg-gradient-to-bl ${colorConfig.gradient} blur-3xl`} />
         </div>
       )}
 
       {/* Sparkline */}
       {sparkline && <SparklineChart data={sparkline} />}
       
-      <div className="relative z-10 space-y-3 sm:space-y-4">
+      <div className="relative z-10 space-y-2 sm:space-y-3">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <motion.h3 
             className={`${config.titleSize} font-medium text-muted-foreground leading-tight`}
             initial={{ opacity: 0 }}
@@ -254,11 +252,10 @@ export function StatCard({
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
               className={`
-                ${config.iconSize} ${scheme.icon} flex-shrink-0
-                p-2 rounded-lg ${scheme.bg}
+                flex-shrink-0 p-2 rounded-lg ${colorConfig.iconBg}
               `}
             >
-              <Icon className="w-full h-full" />
+              <Icon className={`${config.iconSize} ${colorConfig.iconColor}`} />
             </motion.div>
           )}
         </div>
@@ -270,13 +267,15 @@ export function StatCard({
           transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
           className="space-y-1"
         >
-          <div className={`${config.valueSize} font-bold text-foreground leading-tight`}>
-            {typeof value === 'number' ? value.toLocaleString() : value}
-            {suffix && <span className="text-muted-foreground text-sm ml-1">{suffix}</span>}
+          <div className={`${config.valueSize} font-bold text-foreground leading-tight flex items-baseline gap-1`}>
+            <span className="tabular-nums">
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </span>
+            {suffix && <span className="text-muted-foreground text-xs sm:text-sm font-normal">{suffix}</span>}
           </div>
           
           {description && (
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
               {description}
             </p>
           )}
@@ -288,19 +287,21 @@ export function StatCard({
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center space-x-1"
+            className="flex items-center gap-1"
           >
             <TrendIcon />
             <span className={`
-              ${config.changeSize} font-medium
+              ${config.changeSize} font-medium tabular-nums
               ${change.isPositive 
-                ? 'text-emerald-600 dark:text-emerald-400' 
-                : 'text-red-600 dark:text-red-400'
+                ? colorConfig.changePositive 
+                : colorConfig.changeNegative
               }
             `}>
               {Math.abs(change.value)}%
             </span>
-            <span className="text-xs text-muted-foreground">vs прошлый период</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
+              vs прошлый период
+            </span>
           </motion.div>
         )}
 
@@ -310,7 +311,7 @@ export function StatCard({
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
             transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
-            className="h-1 bg-gradient-to-r from-primary/20 to-primary rounded-full overflow-hidden"
+            className="h-0.5 sm:h-1 bg-gradient-to-r from-primary/20 to-primary rounded-full overflow-hidden"
           >
             <motion.div
               initial={{ width: 0 }}
@@ -325,7 +326,7 @@ export function StatCard({
       {/* Hover overlay */}
       {onClick && (
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-500/5 opacity-0 hover:opacity-100 transition-opacity duration-300"
+          className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-500/5 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"
           initial={false}
         />
       )}

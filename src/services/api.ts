@@ -359,6 +359,26 @@ export const productsApi = {
       toast.error('Не удалось оприходовать товар');
       throw error;
     }
+  },
+  delete: async (id: number): Promise<void> => {
+    try {
+      const toastId = toast.loading('Удаление товара...');
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete product');
+      
+      toast.success('Товар успешно удален', {
+        id: toastId
+      });
+    } catch (error) {
+      toast.error('Не удалось удалить товар');
+      throw error;
+    }
   }
 };
 // Enhanced Orders API with success messages

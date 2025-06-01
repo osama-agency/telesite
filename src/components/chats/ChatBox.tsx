@@ -41,7 +41,7 @@ const chatList: ChatItem[] = [
     profileImage: "",
     status: "online",
     lastActive: "2 hours ago",
-    message: "If don’t like something, I’ll stay away from it.",
+    message: "If don't like something, I'll stay away from it.",
     isSender: true,
   },
   {
@@ -91,11 +91,11 @@ export default function ChatBox() {
             }`}
           >
             {!chat.isSender && (
-              <div className="w-10 h-10 overflow-hidden rounded-full">
+              <div className="w-10 h-10 overflow-hidden rounded-full flex-shrink-0">
                 <img
                   src={chat.profileImage}
                   alt={`${chat.name} profile`}
-                  className="object-cover object-center w-full h-full"
+                  className="w-10 h-10 object-cover rounded-full"
                 />
               </div>
             )}

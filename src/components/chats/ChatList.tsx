@@ -81,11 +81,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
         <div className="max-h-full space-y-1 overflow-auto custom-scrollbar">
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-18.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
             </div>
@@ -106,11 +106,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-17.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
             </div>
@@ -131,11 +131,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-19.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
             </div>
@@ -156,11 +156,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-05.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-warning-500 dark:border-gray-900"></span>
             </div>
@@ -181,11 +181,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-20.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
             </div>
@@ -206,11 +206,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-34.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
             </div>
@@ -231,11 +231,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-35.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
             </div>
@@ -256,11 +256,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-36.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-error-500 dark:border-gray-900"></span>
             </div>
@@ -281,11 +281,11 @@ export default function ChatList({ isOpen, onToggle }: ChatListProps) {
 
           {/* <!-- Chat List Item --> */}
           <div className="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/[0.03]">
-            <div className="relative h-12 w-full max-w-[48px] rounded-full">
+            <div className="relative h-12 w-12 rounded-full flex-shrink-0">
               <img
                 src="./images/user/user-37.jpg"
                 alt="profile"
-                className="object-cover object-center w-full h-full overflow-hidden rounded-full"
+                className="w-12 h-12 object-cover rounded-full"
               />
               <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
             </div>

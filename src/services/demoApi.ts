@@ -13,7 +13,57 @@ import {
 export const productsApi = {
   getAll: async () => {
     await simulateDelay();
-    return { data: demoProducts };
+    
+    // Enhance demo products with calculated fields
+    const exchangeRate = 3.20;
+    const fixedCosts = 350;
+    
+    const enhancedProducts = demoProducts.map((product: any) => ({
+      ...product,
+      id: Number(product.id), // Convert to number for API compatibility
+      // Price fields
+      costPriceRUB: Math.round(product.costPriceTRY * exchangeRate),
+      averageSellingPrice: product.retailPriceRUB,
+      // Sales data
+      revenue: product.revenue || 0,
+      soldQuantity: product.soldQuantity || 0,
+      soldPeriod: 30, // 30 days period
+      // Profitability
+      netProfit: product.netProfit || 0,
+      netProfitTotal: product.netProfit || 0,
+      marginPercent: product.marginPercent || 30,
+      markup: Math.round(((product.retailPriceRUB - product.costPriceTRY * exchangeRate) / (product.costPriceTRY * exchangeRate)) * 100),
+      profitPercentTotal: product.marginPercent || 30,
+      // Logistics
+      logisticsCost: fixedCosts,
+      totalCosts: Math.round(product.costPriceTRY * exchangeRate + fixedCosts),
+      // Stock info
+      stock_quantity: product.quantity,
+      averageConsumptionDaily: product.averageConsumptionDaily || 0,
+      daysInStock: product.daysInStock || 0,
+      inDelivery: product.inDelivery || 0,
+      orderPoint: product.quantity < 10,
+      // Other fields
+      exchangeRate: exchangeRate,
+      fixedCosts: fixedCosts,
+      deliveryDays: 7,
+      firstSaleDate: product.firstSaleDate || null,
+      // API compatibility fields
+      description: null,
+      price: String(product.retailPriceRUB),
+      created_at: product.createdAt,
+      updated_at: product.updatedAt,
+      deleted_at: null,
+      ancestry: null,
+      weight: null,
+      dosage_form: null,
+      package_quantity: null,
+      main_ingredient: null,
+      brand: null,
+      old_price: null
+    }));
+    
+    return { data: enhancedProducts };
   },
   
   create: async (product: any) => {

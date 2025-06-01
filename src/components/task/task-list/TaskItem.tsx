@@ -127,8 +127,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
               </span>
             </div>
 
-            <div className="h-6 w-full max-w-6 overflow-hidden rounded-full border-[0.5px] border-gray-200 dark:border-gray-800">
-              <img width={24} height={24} src={userAvatar} alt="user" />
+            <div className="h-6 w-6 overflow-hidden rounded-full border-[0.5px] border-gray-200 dark:border-gray-800 flex-shrink-0">
+              <img 
+                width={24} 
+                height={24} 
+                src={userAvatar} 
+                alt="user"
+                className="w-6 h-6 object-cover rounded-full"
+              />
             </div>
           </div>
         </div>

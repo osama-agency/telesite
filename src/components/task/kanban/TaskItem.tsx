@@ -175,8 +175,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
           </span>
         </div>
       </div>
-      <div className="h-6 absolute top-5 right-5 top w-full max-w-6 overflow-hidden rounded-full border-[0.5px] border-gray-200 dark:border-gray-800">
-        <img src={task.assignee} alt="user" />
+      <div className="h-6 w-6 absolute top-5 right-5 overflow-hidden rounded-full border-[0.5px] border-gray-200 dark:border-gray-800 flex-shrink-0">
+        <img 
+          src={task.assignee} 
+          alt="user" 
+          className="w-6 h-6 object-cover rounded-full"
+        />
       </div>
     </div>
   );

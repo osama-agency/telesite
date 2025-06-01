@@ -471,12 +471,12 @@ export function Purchases() {
                   {/* Product Selection */}
                   <div className="flex-[2]">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Товар</label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
                       <select
                         value={item.productId}
                         onChange={e => updatePurchaseItem(index, 'productId', e.target.value)}
                         disabled={productsLoading}
-                        className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white backdrop-blur-xl border border-gray-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white backdrop-blur-xl border border-gray-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                       >
                         <option value="">Выберите товар</option>
                         {productsLoading ? (
@@ -489,14 +489,17 @@ export function Purchases() {
                           ))
                         )}
                       </select>
-                      <button
-                        type="button"
-                        onClick={() => setIsAddProductModalOpen(true)}
-                        className="px-3 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors"
-                        title="Добавить новый товар"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
+                      {!item.productId && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddProductModalOpen(true)}
+                          className="w-full sm:w-auto flex-shrink-0 px-3 py-2.5 sm:py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base touch-target"
+                          title="Добавить новый товар"
+                        >
+                          <Plus className="h-4 w-4 flex-shrink-0" />
+                          <span className="sm:hidden">Добавить товар</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 

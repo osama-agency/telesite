@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Modal } from "../ui/modal";
 import { useModal } from "../../hooks/useModal";
-import Button from "../ui/button/Button";
+import { Button } from "../ui/button/Button";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import TextArea from "../form/input/TextArea";
@@ -396,14 +396,26 @@ export default function TaskHeader() {
                 Viewers:
               </p>
               <div className="flex -space-x-2">
-                <div className="w-8 h-8 overflow-hidden border border-white rounded-full dark:border-gray-900">
-                  <img src="./images/user/user-13.jpg" alt="user" />
+                <div className="w-8 h-8 overflow-hidden border border-white rounded-full dark:border-gray-900 flex-shrink-0">
+                  <img 
+                    src="./images/user/user-13.jpg" 
+                    alt="user" 
+                    className="w-8 h-8 object-cover rounded-full"
+                  />
                 </div>
-                <div className="w-8 h-8 overflow-hidden border border-white rounded-full dark:border-gray-900">
-                  <img src="./images/user/user-14.jpg" alt="user" />
+                <div className="w-8 h-8 overflow-hidden border border-white rounded-full dark:border-gray-900 flex-shrink-0">
+                  <img 
+                    src="./images/user/user-14.jpg" 
+                    alt="user" 
+                    className="w-8 h-8 object-cover rounded-full"
+                  />
                 </div>
-                <div className="w-8 h-8 overflow-hidden border border-white rounded-full dark:border-gray-900">
-                  <img src="./images/user/user-15.jpg" alt="user" />
+                <div className="w-8 h-8 overflow-hidden border border-white rounded-full dark:border-gray-900 flex-shrink-0">
+                  <img 
+                    src="./images/user/user-15.jpg" 
+                    alt="user" 
+                    className="w-8 h-8 object-cover rounded-full"
+                  />
                 </div>
               </div>
             </div>

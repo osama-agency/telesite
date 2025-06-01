@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Хардкод пользователей
 const USERS = {
@@ -70,51 +71,135 @@ const Login: React.FC = () => {
           onSubmit={handleSubmit}
           className="bg-gray-800/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-gray-700/50 space-y-6"
         >
-          {/* Logo */}
+          {/* Animated Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex flex-col items-center justify-center mb-4">
-              {/* Telegram-style logo */}
-              <div className="relative">
+            <motion.div 
+              className="inline-flex flex-col items-center justify-center mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              {/* Telegram-style logo with animations */}
+              <motion.div 
+                className="relative group cursor-pointer"
+                whileHover={{ scale: 1.05, rotate: 3 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                {/* Glow effect */}
+                <motion.div 
+                  className="absolute inset-0 blur-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-60 transition-opacity duration-500"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+                
+                {/* SVG with animated gradient */}
                 <svg 
                   viewBox="0 0 377 313" 
                   fill="none" 
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-16 w-16 mb-4"
+                  className="h-16 w-16 mb-4 relative z-10"
                 >
-                  <path d="M10.3357 142.918C11.2001 142.481 12.0557 142.071 12.9113 141.678C27.5617 134.876 42.4129 128.529 57.2553 122.173C58.0673 122.173 59.4031 121.256 60.1627 120.933C61.3065 120.444 62.4503 119.964 63.594 119.466C65.7942 118.524 67.9943 117.589 70.1945 116.646C74.5949 114.761 78.9952 112.875 83.4043 110.998C92.205 107.234 101.006 103.471 109.806 99.6997C127.408 92.1737 145.009 84.639 162.611 77.113C180.212 69.5869 197.822 62.0522 215.424 54.5175C233.025 46.9915 250.627 39.4654 268.228 31.9307C285.838 24.396 303.44 16.87 321.041 9.34402C324.952 7.66769 329.187 5.14444 333.378 4.41978C336.896 3.79115 340.336 2.5688 343.872 1.89652C350.604 0.621814 358.016 0.0892996 364.451 2.88318C366.686 3.84357 368.72 5.2143 370.449 6.92555C378.612 15.0191 377.469 28.2812 375.74 39.6575C363.691 118.908 351.651 198.167 339.612 277.425C337.961 288.304 335.726 300.222 327.135 307.093C319.88 312.908 309.534 313.571 300.567 311.092C291.618 308.612 283.69 303.4 275.946 298.266C243.747 276.945 211.556 255.633 179.365 234.312C171.708 229.248 163.187 222.639 163.283 213.463C163.327 207.928 166.627 203.012 169.997 198.62C197.962 162.134 238.342 137.05 268.368 102.249C272.593 97.3511 275.937 88.4719 270.114 85.6518C266.665 83.9668 262.675 86.2542 259.523 88.4457C219.842 116.009 180.16 143.581 140.478 171.153C127.53 180.146 113.945 189.401 98.3429 191.618C84.3822 193.591 70.3342 189.706 56.8101 185.734C45.4862 182.407 34.1797 178.985 22.9169 175.475C16.9362 173.607 10.7547 171.607 6.11864 167.39C1.49128 163.173 -1.15417 156.092 1.62224 150.47C3.36842 146.951 6.77352 144.725 10.3357 142.918Z" fill="url(#paint0_linear_login)"/>
                   <defs>
-                    <linearGradient id="paint0_linear_login" x1="0.489746" y1="156.657" x2="376.979" y2="156.657" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#078EF7"/>
-                      <stop offset="0.326923" stopColor="#BB61F9"/>
-                      <stop offset="0.620192" stopColor="#DF4C9D"/>
-                      <stop offset="0.822115" stopColor="#F2445B"/>
-                      <stop offset="0.9999" stopColor="#F45409"/>
+                    <linearGradient id="animated_gradient_login" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#078EF7">
+                        <animate attributeName="stop-color" values="#078EF7;#BB61F9;#078EF7" dur="4s" repeatCount="indefinite" />
+                      </stop>
+                      <stop offset="50%" stopColor="#DF4C9D">
+                        <animate attributeName="stop-color" values="#DF4C9D;#F2445B;#DF4C9D" dur="4s" repeatCount="indefinite" />
+                      </stop>
+                      <stop offset="100%" stopColor="#F45409">
+                        <animate attributeName="stop-color" values="#F45409;#078EF7;#F45409" dur="4s" repeatCount="indefinite" />
+                      </stop>
                     </linearGradient>
                   </defs>
+                  <motion.path 
+                    d="M10.3357 142.918C11.2001 142.481 12.0557 142.071 12.9113 141.678C27.5617 134.876 42.4129 128.529 57.2553 122.173C58.0673 122.173 59.4031 121.256 60.1627 120.933C61.3065 120.444 62.4503 119.964 63.594 119.466C65.7942 118.524 67.9943 117.589 70.1945 116.646C74.5949 114.761 78.9952 112.875 83.4043 110.998C92.205 107.234 101.006 103.471 109.806 99.6997C127.408 92.1737 145.009 84.639 162.611 77.113C180.212 69.5869 197.822 62.0522 215.424 54.5175C233.025 46.9915 250.627 39.4654 268.228 31.9307C285.838 24.396 303.44 16.87 321.041 9.34402C324.952 7.66769 329.187 5.14444 333.378 4.41978C336.896 3.79115 340.336 2.5688 343.872 1.89652C350.604 0.621814 358.016 0.0892996 364.451 2.88318C366.686 3.84357 368.72 5.2143 370.449 6.92555C378.612 15.0191 377.469 28.2812 375.74 39.6575C363.691 118.908 351.651 198.167 339.612 277.425C337.961 288.304 335.726 300.222 327.135 307.093C319.88 312.908 309.534 313.571 300.567 311.092C291.618 308.612 283.69 303.4 275.946 298.266C243.747 276.945 211.556 255.633 179.365 234.312C171.708 229.248 163.187 222.639 163.283 213.463C163.327 207.928 166.627 203.012 169.997 198.62C197.962 162.134 238.342 137.05 268.368 102.249C272.593 97.3511 275.937 88.4719 270.114 85.6518C266.665 83.9668 262.675 86.2542 259.523 88.4457C219.842 116.009 180.16 143.581 140.478 171.153C127.53 180.146 113.945 189.401 98.3429 191.618C84.3822 193.591 70.3342 189.706 56.8101 185.734C45.4862 182.407 34.1797 178.985 22.9169 175.475C16.9362 173.607 10.7547 171.607 6.11864 167.39C1.49128 163.173 -1.15417 156.092 1.62224 150.47C3.36842 146.951 6.77352 144.725 10.3357 142.918Z" 
+                    fill="url(#animated_gradient_login)"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                  />
                 </svg>
-                <div className="absolute inset-0 blur-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-50" />
-              </div>
-              <span
+                
+                {/* Pulsing glow on hover */}
+                <motion.div 
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-30 blur-xl"
+                  animate={{
+                    scale: [1, 1.3, 1],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              </motion.div>
+              
+              {/* ТЕЛЕСАЙТ text */}
+              <motion.span
                 className="font-bold italic text-white text-2xl"
                 style={{ fontFamily: 'Futura PT Extra Bold Italic, Futura, Arial, sans-serif' }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
               >
                 ТЕЛЕСАЙТ
-              </span>
-            </div>
-            <h2 className="text-3xl font-bold text-white">Вход в систему</h2>
-            <p className="text-gray-400 mt-2">Введите свои учетные данные</p>
+              </motion.span>
+              
+              {/* Analytics text with animated gradient */}
+              <motion.div 
+                className="relative"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
+              >
+                <span 
+                  className="text-lg font-medium bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-[length:200%_auto] animate-gradient-x bg-clip-text text-transparent"
+                >
+                  Analytics
+                </span>
+              </motion.div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+            >
+              <h2 className="text-3xl font-bold text-white">Вход в систему</h2>
+              <p className="text-gray-400 mt-2">Введите свои учетные данные</p>
+            </motion.div>
           </div>
 
           {/* Error message */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm">{error}</span>
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400"
+              >
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Email/Username input */}
-          <div className="space-y-2">
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.8 }}
+          >
             <label htmlFor="email" className="text-sm font-medium text-gray-300">
               Email или логин
             </label>
@@ -131,10 +216,15 @@ const Login: React.FC = () => {
                 disabled={isLoading}
               />
             </div>
-          </div>
+          </motion.div>
 
           {/* Password input */}
-          <div className="space-y-2">
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.9 }}
+          >
             <label htmlFor="password" className="text-sm font-medium text-gray-300">
               Пароль
             </label>
@@ -159,10 +249,15 @@ const Login: React.FC = () => {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Remember me */}
-          <div className="flex items-center justify-between">
+          <motion.div 
+            className="flex items-center justify-between"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 1 }}
+          >
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -173,13 +268,17 @@ const Login: React.FC = () => {
               />
               <span className="ml-2 text-sm text-gray-300">Запомнить меня</span>
             </label>
-          </div>
+          </motion.div>
 
           {/* Submit button */}
-          <button
+          <motion.button
             type="submit"
             disabled={isLoading}
             className="w-full py-3 bg-gradient-to-r from-[#078EF7] via-[#BB61F9] via-[#DF4C9D] via-[#F2445B] to-[#F45409] bg-[length:200%_200%] animate-gradient-x hover:opacity-90 disabled:opacity-50 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 1.1 }}
+            whileTap={{ scale: 0.98 }}
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
@@ -192,14 +291,19 @@ const Login: React.FC = () => {
             ) : (
               "Войти"
             )}
-          </button>
+          </motion.button>
 
           {/* Demo hint */}
-          <div className="text-center pt-4 border-t border-gray-700">
+          <motion.div 
+            className="text-center pt-4 border-t border-gray-700"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 1.2 }}
+          >
             <p className="text-xs text-gray-500">
               Демо доступ: <span className="text-gray-400">demo / demo</span>
             </p>
-          </div>
+          </motion.div>
         </form>
       </div>
     </div>

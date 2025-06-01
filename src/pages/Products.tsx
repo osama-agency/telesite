@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Filter, Package, Truck, CheckCircle, DollarSign, Edit3, Calculator, ShoppingCart, AlertCircle, Sparkles, ChevronsUpDown, Settings2, Calendar, RefreshCw, ChevronDown } from 'lucide-react';
+import { Plus, Search, Filter, Package, Truck, CheckCircle, DollarSign, Edit3, Calculator, ShoppingCart, AlertCircle, Sparkles, ChevronsUpDown, Settings2, Calendar, RefreshCw, ChevronDown, Trash2 } from 'lucide-react';
 import { ProductTable } from '../components/ProductTable';
 import { AddOrderModal } from '../components/AddOrderModal';
 import { CreatePurchaseModal } from '../components/CreatePurchaseModal';
@@ -7,6 +7,7 @@ import { BulkEditModal } from '../components/BulkEditModal';
 import { ReceiveDeliveryModal } from '../components/ReceiveDeliveryModal';
 import { productsApi, expensesApi, type ApiProduct, type Expense as ApiExpense } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -493,20 +494,22 @@ export function Products() {
     console.log(`Updated TRY rate to ${newRate} for ${productIds.length} products`);
   };
 
-  return <motion.div initial={{
-    opacity: 0
-  }} animate={{
-    opacity: 1
-  }} className="space-y-6 sm:space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
-        <div className="relative">
-          <motion.div initial={{
-          scale: 0.95
-        }} animate={{
-          scale: 1
-        }} className="absolute -top-4 sm:-top-8 -left-4 sm:-left-8 w-24 sm:w-32 h-24 sm:h-32 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-full blur-2xl hidden sm:block" />
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="w-full min-w-0 max-w-none px-4 sm:px-6 md:px-6 lg:px-6 xl:px-4 2xl:px-6 space-y-6 sm:space-y-8 lg:space-y-10"
+    >
+      {/* Header */}
+      <div className="w-full flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+        <div className="relative min-w-0 flex-1">
+          <motion.div 
+            initial={{ scale: 0.95 }} 
+            animate={{ scale: 1 }} 
+            className="absolute -top-2 sm:-top-4 lg:-top-8 -left-2 sm:-left-4 lg:-left-8 w-16 sm:w-24 lg:w-32 h-16 sm:h-24 lg:h-32 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-full blur-2xl hidden sm:block" 
+          />
           <div className="relative">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 bg-clip-text text-transparent tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 bg-clip-text text-transparent tracking-tight">
               Управление товарами
             </h1>
             <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1 sm:mt-2">
@@ -515,179 +518,233 @@ export function Products() {
           </div>
         </div>
       </div>
+
+      {/* Alert Messages */}
       <AnimatePresence>
-        {isDemoData && <motion.div initial={{
-        opacity: 0,
-        y: -10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} exit={{
-        opacity: 0,
-        y: -10
-      }} className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 backdrop-blur-xl border border-amber-200/50 dark:border-amber-800/50 rounded-2xl p-4 flex items-start gap-3 shadow-lg">
-            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-medium text-amber-900 dark:text-amber-200">
+        {isDemoData && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -10 }} 
+            className="w-full bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 backdrop-blur-xl border border-amber-200/50 dark:border-amber-800/50 rounded-2xl p-4 sm:p-5 flex items-start gap-3 shadow-lg"
+          >
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm sm:text-base font-medium text-amber-900 dark:text-amber-200">
                 Демонстрационные данные
               </h3>
               <p className="text-sm text-amber-700/90 dark:text-amber-300/90 mt-0.5">
-                Отображаются тестовые данные, так как не удалось получить
-                актуальную информацию с сервера.
+                Отображаются тестовые данные, так как не удалось получить актуальную информацию с сервера.
               </p>
             </div>
-          </motion.div>}
-        {error && !isDemoData && <motion.div initial={{
-        opacity: 0,
-        y: -10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} exit={{
-        opacity: 0,
-        y: -10
-      }} className="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 backdrop-blur-xl border border-red-200/50 dark:border-red-800/50 rounded-2xl p-4 flex items-start gap-3 shadow-lg">
-            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-medium text-red-900 dark:text-red-200">
+          </motion.div>
+        )}
+        {error && !isDemoData && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -10 }} 
+            className="w-full bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 backdrop-blur-xl border border-red-200/50 dark:border-red-800/50 rounded-2xl p-4 sm:p-5 flex items-start gap-3 shadow-lg"
+          >
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm sm:text-base font-medium text-red-900 dark:text-red-200">
                 Ошибка загрузки данных
               </h3>
               <p className="text-sm text-red-700/90 dark:text-red-300/90 mt-0.5">
                 {error}
               </p>
             </div>
-          </motion.div>}
+          </motion.div>
+        )}
       </AnimatePresence>
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-xl overflow-hidden">
-        <nav className="flex flex-nowrap gap-2 p-3 overflow-x-auto hide-scrollbar">
+
+      {/* Tabs */}
+      <div className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-xl overflow-hidden">
+        <nav className="flex flex-nowrap gap-2 p-3 sm:p-4 overflow-x-auto scrollbar-hide">
           {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = selectedTab === tab.id;
-          const count = tab.id === 'all' ? products.length : tab.id === 'needOrder' ? products.filter(p => p.orderPoint).length : tab.id === 'lowProfit' ? products.filter(p => p.profitPercentTotal < 10).length : tab.id === 'profitable' ? products.filter(p => p.profitPercentTotal > 20).length : products.filter(p => p.inDelivery > 0).length;
-          return <motion.button key={tab.id} whileHover={{
-            scale: isActive ? 1 : 1.02
-          }} whileTap={{
-            scale: 0.98
-          }} onClick={() => setSelectedTab(tab.id as any)} className={`
-                  relative flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-300
-                  ${isActive ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'}
+            const Icon = tab.icon;
+            const isActive = selectedTab === tab.id;
+            const count = tab.id === 'all' ? products.length : 
+              tab.id === 'needOrder' ? products.filter(p => p.orderPoint).length : 
+              tab.id === 'lowProfit' ? products.filter(p => p.profitPercentTotal < 10).length : 
+              tab.id === 'profitable' ? products.filter(p => p.profitPercentTotal > 20).length : 
+              products.filter(p => p.inDelivery > 0).length;
+            
+            return (
+              <motion.button 
+                key={tab.id} 
+                whileHover={{ scale: isActive ? 1 : 1.02 }} 
+                whileTap={{ scale: 0.98 }} 
+                onClick={() => setSelectedTab(tab.id as any)} 
+                className={`
+                  relative flex items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-medium text-sm sm:text-base
+                  transition-all duration-300 whitespace-nowrap flex-shrink-0
+                  ${isActive 
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                  }
                 `}
                 aria-label={`Показать ${tab.name.toLowerCase()}`}
-          >
-                <Icon className={`h-4 w-4 mr-2 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
-                {tab.name}
+              >
+                <Icon className={`h-4 w-4 mr-2 flex-shrink-0 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+                <span className="truncate">{tab.name}</span>
                 <span className={`
-                  ml-2 px-2 py-0.5 rounded-full text-xs 
+                  ml-2 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0
                   ${isActive ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'}
                 `}>
                   {count}
                 </span>
-                {isActive && <motion.div layoutId="activeTab" className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl -z-10" transition={{
-              type: 'spring',
-              bounce: 0.2,
-              duration: 0.6
-            }} />}
-              </motion.button>;
-        })}
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeTab" 
+                    className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl -z-10" 
+                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }} 
+                  />
+                )}
+              </motion.button>
+            );
+          })}
         </nav>
       </div>
+
+      {/* Bulk Actions */}
       <AnimatePresence>
-        {selectedProducts.length > 0 && <motion.div initial={{
-        opacity: 0,
-        y: -20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} exit={{
-        opacity: 0,
-        y: -20
-      }} className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50 shadow-xl p-5">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <CheckCircle className="h-5 w-5 text-white" />
+        {selectedProducts.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }} 
+            className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50 shadow-xl p-4 sm:p-5 lg:p-6"
+          >
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6">
+              <div className="flex items-center gap-4 min-w-0 flex-1">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
-                <div>
-                  <p className="font-medium text-lg">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-base sm:text-lg lg:text-xl">
                     Выбрано товаров: {selectedProducts.length}
                   </p>
-                  <p className="text-sm text-muted-foreground/80">
+                  <p className="text-sm sm:text-base text-muted-foreground/80">
                     Выберите действие для массового редактирования
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <motion.button whileHover={{
-              scale: 1.02
-            }} whileTap={{
-              scale: 0.98
-            }} onClick={() => handleBulkEdit('costPriceTRY')} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 text-sm font-medium" disabled={bulkEditLoading}>
-                  <Edit3 className="h-4 w-4 mr-2 opacity-80" />
-                  Себестоимость TRY
+              <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto">
+                <motion.button 
+                  whileHover={{ scale: 1.02 }} 
+                  whileTap={{ scale: 0.98 }} 
+                  onClick={() => handleBulkEdit('costPriceTRY')} 
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 text-sm font-medium" 
+                  disabled={bulkEditLoading}
+                >
+                  <Edit3 className="h-4 w-4 mr-2 opacity-80 flex-shrink-0" />
+                  <span className="truncate">Себестоимость TRY</span>
                 </motion.button>
-                <motion.button whileHover={{
-              scale: 1.02
-            }} whileTap={{
-              scale: 0.98
-            }} onClick={() => {
-              const rate = prompt('Введите новый курс TRY (от 0.01 до 50.00):');
-              if (rate) {
-                const numericRate = parseFloat(rate);
-                if (!isNaN(numericRate) && numericRate > 0 && numericRate <= 50) {
-                  handleBulkEditTryRate(selectedProducts, numericRate);
-                } else {
-                  alert('Неверный курс. Введите число от 0.01 до 50.00');
-                }
-              }
-            }} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300 text-sm font-medium" disabled={bulkEditLoading}>
-                  <Edit3 className="h-4 w-4 mr-2 opacity-80" />
-                  Курс лиры
+                <motion.button 
+                  whileHover={{ scale: 1.02 }} 
+                  whileTap={{ scale: 0.98 }} 
+                  onClick={() => {
+                    const rate = prompt('Введите новый курс TRY (от 0.01 до 50.00):');
+                    if (rate) {
+                      const numericRate = parseFloat(rate);
+                      if (!isNaN(numericRate) && numericRate > 0 && numericRate <= 50) {
+                        handleBulkEditTryRate(selectedProducts, numericRate);
+                      } else {
+                        alert('Неверный курс. Введите число от 0.01 до 50.00');
+                      }
+                    }
+                  }} 
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300 text-sm font-medium" 
+                  disabled={bulkEditLoading}
+                >
+                  <Edit3 className="h-4 w-4 mr-2 opacity-80 flex-shrink-0" />
+                  <span className="truncate">Курс лиры</span>
                 </motion.button>
-                <motion.button whileHover={{
-              scale: 1.02
-            }} whileTap={{
-              scale: 0.98
-            }} onClick={() => handleBulkEdit('expenses')} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300 text-sm font-medium" disabled={bulkEditLoading}>
-                  <Calculator className="h-4 w-4 mr-2 opacity-80" />
-                  Расходы
+                <motion.button 
+                  whileHover={{ scale: 1.02 }} 
+                  whileTap={{ scale: 0.98 }} 
+                  onClick={() => handleBulkEdit('expenses')} 
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300 text-sm font-medium" 
+                  disabled={bulkEditLoading}
+                >
+                  <Calculator className="h-4 w-4 mr-2 opacity-80 flex-shrink-0" />
+                  <span className="truncate">Расходы</span>
                 </motion.button>
-                <motion.button whileHover={{
-              scale: 1.02
-            }} whileTap={{
-              scale: 0.98
-            }} onClick={() => setSelectedProducts([])} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl shadow-lg shadow-gray-500/20 hover:shadow-xl hover:shadow-gray-500/30 transition-all duration-300 text-sm font-medium">
-                  Отменить
+                <motion.button 
+                  whileHover={{ scale: 1.02 }} 
+                  whileTap={{ scale: 0.98 }} 
+                  onClick={async () => {
+                    if (window.confirm(`Вы уверены, что хотите удалить ${selectedProducts.length} товаров? Это действие необратимо.`)) {
+                      try {
+                        setBulkEditLoading(true);
+                        // Удаляем товары по одному
+                        for (const productId of selectedProducts) {
+                          await productsApi.delete(Number(productId));
+                        }
+                        // Обновляем локальный список товаров
+                        setProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
+                        // Очищаем выбранные товары
+                        setSelectedProducts([]);
+                        toast.success(`Удалено ${selectedProducts.length} товаров`);
+                      } catch (error) {
+                        console.error('Failed to delete products:', error);
+                        toast.error('Не удалось удалить некоторые товары');
+                        // Перезагружаем список товаров
+                        loadProducts();
+                      } finally {
+                        setBulkEditLoading(false);
+                      }
+                    }
+                  }} 
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-300 text-sm font-medium" 
+                  disabled={bulkEditLoading}
+                >
+                  <Trash2 className="h-4 w-4 mr-2 opacity-80 flex-shrink-0" />
+                  <span className="truncate">Удалить</span>
+                </motion.button>
+                <motion.button 
+                  whileHover={{ scale: 1.02 }} 
+                  whileTap={{ scale: 0.98 }} 
+                  onClick={() => setSelectedProducts([])} 
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl shadow-lg shadow-gray-500/20 hover:shadow-xl hover:shadow-gray-500/30 transition-all duration-300 text-sm font-medium"
+                >
+                  <span className="truncate">Отменить</span>
                 </motion.button>
               </div>
             </div>
-          </motion.div>}
+          </motion.div>
+        )}
       </AnimatePresence>
-      <div className="flex flex-col gap-4">
+
+      {/* Search and Filters */}
+      <div className="w-full flex flex-col gap-4 sm:gap-6">
         {/* Search and Period Filter Row */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div className="relative flex-1 max-w-full sm:max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/70 h-5 w-5" />
+          <div className="relative flex-1 max-w-full sm:max-w-md lg:max-w-lg">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/70 h-4 w-4 sm:h-5 sm:w-5 pointer-events-none" />
             <input 
               type="text" 
               placeholder="Поиск товаров..." 
               value={searchTerm} 
               onChange={e => setSearchTerm(e.target.value)} 
-              className="w-full pl-12 pr-4 h-11 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-border/50 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-sm" 
+              className="w-full pl-10 sm:pl-12 pr-4 h-11 sm:h-12 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-border/50 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-sm text-sm sm:text-base" 
             />
           </div>
           
           <div className="relative period-dropdown-container flex-shrink-0">
             <button
               onClick={() => setIsPeriodDropdownOpen(!isPeriodDropdownOpen)}
-              className="inline-flex items-center justify-between w-full sm:w-auto h-11 px-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-border/50 rounded-xl hover:bg-accent/50 transition-all sm:min-w-[180px]"
+              className="inline-flex items-center justify-between w-full sm:w-auto h-11 sm:h-12 px-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-border/50 rounded-xl hover:bg-accent/50 transition-all sm:min-w-[180px] lg:min-w-[200px]"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 min-w-0 flex-1">
                 <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm font-medium truncate">
+                <span className="text-sm sm:text-base font-medium truncate">
                   {periodOptions.find(opt => opt.value === selectedPeriod)?.label || 'Все время'}
                 </span>
               </div>
-              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform flex-shrink-0 ${isPeriodDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform flex-shrink-0 ml-2 ${isPeriodDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             <AnimatePresence>
@@ -697,7 +754,7 @@ export function Products() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full mt-2 left-0 right-0 sm:left-auto sm:right-auto sm:w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-border/20 z-50 max-h-96 overflow-y-auto"
+                  className="absolute top-full mt-2 left-0 right-0 sm:left-auto sm:right-auto sm:w-56 lg:w-64 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-border/20 z-50 max-h-96 overflow-y-auto"
                 >
                   <div className="py-1">
                     {periodOptions.slice(0, -1).map((option) => (
@@ -709,12 +766,12 @@ export function Products() {
                             setIsPeriodDropdownOpen(false);
                           }
                         }}
-                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm hover:bg-accent/80 transition-all ${
+                        className={`w-full flex items-center space-x-3 px-4 py-2 sm:py-2.5 text-sm sm:text-base hover:bg-accent/80 transition-all ${
                           selectedPeriod === option.value ? 'bg-emerald-500/10 text-emerald-600 font-medium' : 'text-foreground/80'
                         }`}
                       >
                         <Calendar className="h-4 w-4 opacity-60 flex-shrink-0" />
-                        <span className="flex-1 text-left">{option.label}</span>
+                        <span className="flex-1 text-left truncate">{option.label}</span>
                         {selectedPeriod === option.value && (
                           <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                         )}
@@ -724,12 +781,12 @@ export function Products() {
                       onClick={() => {
                         setSelectedPeriod('custom');
                       }}
-                      className={`w-full flex items-center space-x-3 px-4 py-2 text-sm hover:bg-accent/80 transition-all ${
+                      className={`w-full flex items-center space-x-3 px-4 py-2 sm:py-2.5 text-sm sm:text-base hover:bg-accent/80 transition-all ${
                         selectedPeriod === 'custom' ? 'bg-emerald-500/10 text-emerald-600 font-medium' : 'text-foreground/80'
                       }`}
                     >
                       <Calendar className="h-4 w-4 opacity-60 flex-shrink-0" />
-                      <span className="flex-1 text-left">Свой период</span>
+                      <span className="flex-1 text-left truncate">Свой период</span>
                       {selectedPeriod === 'custom' && (
                         <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                       )}
@@ -739,7 +796,7 @@ export function Products() {
                   {selectedPeriod === 'custom' && (
                     <div className="border-t border-border/20 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-3">
                       <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Начало</label>
+                        <label className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 block">Начало</label>
                         <input
                           type="date"
                           value={customDateRange.start}
@@ -748,7 +805,7 @@ export function Products() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Конец</label>
+                        <label className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 block">Конец</label>
                         <input
                           type="date"
                           value={customDateRange.end}
@@ -778,7 +835,7 @@ export function Products() {
                           setCustomDateRange({ start: '', end: '' });
                           setIsPeriodDropdownOpen(false);
                         }}
-                        className="w-full flex items-center justify-center space-x-1 px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded transition-colors"
+                        className="w-full flex items-center justify-center space-x-1 px-2 py-1 text-[10px] sm:text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded transition-colors"
                       >
                         <RefreshCw className="h-3 w-3" />
                         <span>Сбросить</span>
@@ -791,34 +848,50 @@ export function Products() {
           </div>
         </div>
         
-        {/* Action Button Row */}
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button 
             onClick={() => setIsCreatePurchaseModalOpen(true)} 
-            className="inline-flex items-center justify-center h-11 px-4 sm:px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 font-medium"
+            className="inline-flex items-center justify-center h-11 sm:h-12 px-4 sm:px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 font-medium text-sm sm:text-base"
           >
-            <Plus className="h-5 w-5 mr-2 flex-shrink-0" />
+            <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
             <span className="truncate">Добавить заказ</span>
           </button>
         </div>
       </div>
-      <motion.div initial={{
-      opacity: 0,
-      y: 20
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.2
-    }}>
-        <ProductTable products={filteredProducts} loading={loading} onUpdateProduct={handleUpdateProduct} exchangeRate={exchangeRate} selectedProducts={selectedProducts} onSelectProducts={setSelectedProducts} onReceiveDelivery={handleReceiveDelivery} onBulkEditTryRate={handleBulkEditTryRate} />
+
+      {/* Products Table */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ delay: 0.2 }}
+        className="w-full"
+      >
+        <ProductTable 
+          products={filteredProducts} 
+          loading={loading} 
+          onUpdateProduct={handleUpdateProduct} 
+          exchangeRate={exchangeRate} 
+          selectedProducts={selectedProducts} 
+          onSelectProducts={setSelectedProducts} 
+          onReceiveDelivery={handleReceiveDelivery} 
+          onBulkEditTryRate={handleBulkEditTryRate} 
+        />
       </motion.div>
-      <AddOrderModal isOpen={isAddOrderModalOpen} onClose={() => setIsAddOrderModalOpen(false)} products={products} onAddOrder={order => {
-      console.log('Adding order:', order);
-      setIsAddOrderModalOpen(false);
-    }} onAddExpense={expense => {
-      addExpense(expense);
-    }} />
+
+      {/* Modals */}
+      <AddOrderModal 
+        isOpen={isAddOrderModalOpen} 
+        onClose={() => setIsAddOrderModalOpen(false)} 
+        products={products} 
+        onAddOrder={order => {
+          console.log('Adding order:', order);
+          setIsAddOrderModalOpen(false);
+        }} 
+        onAddExpense={expense => {
+          addExpense(expense);
+        }} 
+      />
       <CreatePurchaseModal 
         isOpen={isCreatePurchaseModalOpen} 
         onClose={() => setIsCreatePurchaseModalOpen(false)}
@@ -826,15 +899,22 @@ export function Products() {
           console.log('Purchase created successfully');
         }}
       />
-      <BulkEditModal isOpen={bulkEditModal.isOpen} onClose={() => setBulkEditModal({
-      isOpen: false,
-      type: null
-    })} type={bulkEditModal.type} selectedCount={selectedProducts.length} onSave={handleBulkEditSave} loading={bulkEditLoading} />
-      <ReceiveDeliveryModal isOpen={receiveDeliveryModal.isOpen} onClose={() => setReceiveDeliveryModal({
-      isOpen: false,
-      productId: null
-    })} product={products.find(p => p.id === receiveDeliveryModal.productId)} onSave={handleReceiveDeliverySave} />
-    </motion.div>;
+      <BulkEditModal 
+        isOpen={bulkEditModal.isOpen} 
+        onClose={() => setBulkEditModal({ isOpen: false, type: null })} 
+        type={bulkEditModal.type} 
+        selectedCount={selectedProducts.length} 
+        onSave={handleBulkEditSave} 
+        loading={bulkEditLoading} 
+      />
+      <ReceiveDeliveryModal 
+        isOpen={receiveDeliveryModal.isOpen} 
+        onClose={() => setReceiveDeliveryModal({ isOpen: false, productId: null })} 
+        product={products.find(p => p.id === receiveDeliveryModal.productId)} 
+        onSave={handleReceiveDeliverySave} 
+      />
+    </motion.div>
+  );
 }
 
 <style>{`

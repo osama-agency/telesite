@@ -218,27 +218,61 @@ export function Expenses() {
         </div>
       </div>
       {/* Filters */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-border shadow-xl p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-border shadow-xl p-3 sm:p-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Поиск */}
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <input type="text" placeholder="Поиск по описанию или товару..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" />
+            <Search className="absolute left-2.5 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground pointer-events-none" />
+            <input 
+              type="text" 
+              placeholder="Поиск..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+              className="w-full pl-8 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all placeholder:text-xs sm:placeholder:text-sm" 
+              title="Поиск по описанию или товару"
+              aria-label="Поиск по описанию или товару"
+            />
           </div>
-          <select value={selectedType} onChange={e => setSelectedType(e.target.value)} className="px-4 py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all">
-            <option value="all">Все типы</option>
-            {expenseTypes.map(type => <option key={type.id} value={type.id}>
-                {type.name}
-              </option>)}
-          </select>
-          <div className="flex gap-2">
-            <input type="date" value={dateRange.start} onChange={e => setDateRange(prev => ({
-            ...prev,
-            start: e.target.value
-          }))} className="px-4 py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" />
-            <input type="date" value={dateRange.end} onChange={e => setDateRange(prev => ({
-            ...prev,
-            end: e.target.value
-          }))} className="px-4 py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" />
+          
+          {/* Тип и даты в одном ряду на больших экранах */}
+          <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
+            {/* Выбор типа */}
+            <select 
+              value={selectedType} 
+              onChange={e => setSelectedType(e.target.value)} 
+              className="w-full lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+            >
+              <option value="all">Все типы</option>
+              {expenseTypes.map(type => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+            
+            {/* Даты */}
+            <div className="flex flex-col sm:flex-row gap-2 lg:gap-2 w-full lg:w-auto">
+              <input 
+                type="date" 
+                value={dateRange.start} 
+                onChange={e => setDateRange(prev => ({
+                  ...prev,
+                  start: e.target.value
+                }))} 
+                className="w-full sm:flex-1 lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" 
+                placeholder="С даты"
+              />
+              <input 
+                type="date" 
+                value={dateRange.end} 
+                onChange={e => setDateRange(prev => ({
+                  ...prev,
+                  end: e.target.value
+                }))} 
+                className="w-full sm:flex-1 lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" 
+                placeholder="По дату"
+              />
+            </div>
           </div>
         </div>
       </div>

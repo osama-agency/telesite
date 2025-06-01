@@ -140,5 +140,33 @@ export const productController = {
     } catch (error) {
       res.status(500).json({ error: 'Sync failed' });
     }
+  },
+
+  async delete(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const product = await Product.findOne({ id: Number(id) });
+      
+      if (!product) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Product not found' 
+        });
+      }
+      
+      // Используем жесткое удаление (hard delete)
+      await Product.deleteOne({ id: Number(id) });
+      
+      res.json({ 
+        success: true,
+        message: 'Product deleted successfully' 
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to delete product' 
+      });
+    }
   }
 }; 
