@@ -10,27 +10,30 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * Основной Layout компонент приложения
+ * Управляет структурой страницы, включая боковую панель, хедер и основной контент
+ * Адаптивный дизайн для мобильных, планшетов и десктопов
+ */
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isMobile, isTablet, isDesktop, width } = useResponsive();
   
-  // Check if we should show desktop layout
+  // Определяем, показывать ли десктопную версию
   const shouldShowDesktop = isDesktop || width >= 1024;
   
-  // Close sidebar on route change (mobile only)
+  // Закрываем сайдбар при смене маршрута (только для мобильных)
   useEffect(() => {
     if (isMobile || isTablet) {
       setIsSidebarOpen(false);
     }
   }, [location.pathname, isMobile, isTablet]);
   
-  // Remove auto-open sidebar logic for desktop since it's always visible
-  
   return (
     <div className="relative min-h-screen-safe">
-      {/* Background Effects */}
+      {/* Анимированные фоновые эффекты */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-blue-50/30 to-violet-50/20 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800/50" />
         <motion.div 
@@ -60,13 +63,14 @@ export function Layout({ children }: LayoutProps) {
         />
       </div>
       
-      {/* Mobile Header */}
+      {/* Мобильный хедер - показывается только на маленьких экранах */}
       <header className={`
         lg:hidden fixed inset-x-0 top-0 z-40
         glass glass-border
         safe-top
       `}>
         <div className="flex h-14 items-center gap-4 px-4 sm:px-6">
+          {/* Кнопка открытия/закрытия меню */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="focus-ring -ml-2 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800 motion-safe:transition-all"
@@ -97,7 +101,7 @@ export function Layout({ children }: LayoutProps) {
             </AnimatePresence>
           </button>
           
-          {/* Logo */}
+          {/* Логотип ТЕЛЕСАЙТ */}
           <Link to="/" className="flex items-center gap-2">
             <svg 
               width="24" 
@@ -121,6 +125,7 @@ export function Layout({ children }: LayoutProps) {
             <span className="font-bold text-sm sm:text-base">ТЕЛЕСАЙТ</span>
           </Link>
           
+          {/* Переключатель темы */}
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -155,15 +160,15 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
       
-      {/* Main Layout */}
+      {/* Основная структура с сайдбаром и контентом */}
       <div className="flex">
-        {/* Sidebar */}
+        {/* Боковая панель навигации */}
         <Sidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
         
-        {/* Main Content */}
+        {/* Основной контент страницы */}
         <main className={`
           flex-1 min-h-screen-safe w-full
           ${shouldShowDesktop ? 'lg:ml-72' : ''}

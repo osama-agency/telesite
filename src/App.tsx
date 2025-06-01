@@ -13,14 +13,17 @@ import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from 'sonner';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
-// Extend window type for demo mode
+// Расширение типа window для поддержки демо-режима
 declare global {
   interface Window {
     isDemoMode?: boolean;
   }
 }
 
-// Защищенный Layout с проверкой демо-режима
+/**
+ * Защищенный Layout компонент
+ * Проверяет роль пользователя и устанавливает флаг демо-режима
+ */
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     // Проверяем роль пользователя из localStorage
@@ -38,15 +41,19 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 };
 
+/**
+ * Главный компонент приложения
+ * Настраивает маршрутизацию и глобальные провайдеры
+ */
 export default function App() {
   return (
     <ThemeProvider>
       <Router>
         <Routes>
-          {/* Публичный маршрут */}
+          {/* Публичный маршрут для страницы входа */}
           <Route path="/login" element={<Login />} />
           
-          {/* Защищенные маршруты */}
+          {/* Защищенные маршруты приложения */}
           <Route path="/" element={<ProtectedLayout><Analytics /></ProtectedLayout>} />
           <Route path="/analytics" element={<ProtectedLayout><Analytics /></ProtectedLayout>} />
           <Route path="/products" element={<ProtectedLayout><Products /></ProtectedLayout>} />
@@ -56,10 +63,12 @@ export default function App() {
           <Route path="/customer-orders" element={<ProtectedLayout><CustomerOrders /></ProtectedLayout>} />
           <Route path="/test" element={<ProtectedLayout><Test /></ProtectedLayout>} />
           
-          {/* Редирект по умолчанию */}
+          {/* Редирект для несуществующих маршрутов */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+      
+      {/* Глобальный компонент для отображения уведомлений */}
       <Toaster 
         richColors 
         position="top-right" 

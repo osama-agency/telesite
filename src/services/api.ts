@@ -1,9 +1,18 @@
+/**
+ * API Service Module
+ * Централизованный модуль для работы с API бэкенда
+ * Поддерживает как реальный бэкенд, так и демо-режим
+ */
+
 import { toast } from 'sonner';
 
 // Import demo API if in demo mode
 import * as demoApi from './demoApi';
 
-// Check if demo mode is active
+/**
+ * Проверяет, активен ли демо-режим
+ * Демо-режим используется для демонстрации функционала без реального бэкенда
+ */
 const isDemoMode = () => {
   if (typeof window !== 'undefined') {
     // Check localStorage first, then window.isDemoMode
@@ -13,13 +22,14 @@ const isDemoMode = () => {
   return false;
 };
 
-// Define pagination types first
+// Типы для пагинации
 export interface PaginationParams {
   page?: number;
   limit?: number;
   from?: string;
   to?: string;
 }
+
 export interface PaginatedResponse<T> {
   data: T[];
   metadata: {
@@ -28,15 +38,18 @@ export interface PaginatedResponse<T> {
     limit: number;
   };
 }
-// Base API URL for our backend
+
+// Базовый URL для API бэкенда
 const API_URL = 'http://localhost:3000/api';
-// Error types
+
+// Типы ошибок API
 export interface ApiError {
   message: string;
   status: number;
   details?: Record<string, string[]>;
   code?: string;
 }
+
 // Base response type
 export interface ApiResponse<T> {
   data: T;
@@ -47,6 +60,7 @@ export interface ApiResponse<T> {
     perPage?: number;
   };
 }
+
 // Product types
 export interface ApiProductBase {
   id: number;
@@ -65,6 +79,7 @@ export interface ApiProductBase {
   brand: string | null;
   old_price: string | null;
 }
+
 export interface ApiProduct extends ApiProductBase {
   // Additional calculated fields from backend
   averageSellingPrice: number;
@@ -89,6 +104,7 @@ export interface ApiProduct extends ApiProductBase {
   inDelivery?: number; // Количество товаров в доставке
   firstSaleDate?: string; // Дата первой продажи товара
 }
+
 // Order types
 export interface OrderWithProducts {
   id: string;
@@ -107,6 +123,7 @@ export interface OrderWithProducts {
   created_at: string;
   updated_at: string;
 }
+
 // Customer Order types
 export interface ApiCustomerOrder {
   id: string;
@@ -120,6 +137,7 @@ export interface ApiCustomerOrder {
   price: number;
   status: string;
 }
+
 // Expense type
 export interface Expense {
   id: string;
@@ -136,6 +154,7 @@ export interface Expense {
   }>;
   createdAt: string;
 }
+
 // Enhanced error handler with toast notifications
 const handleApiError = async (response: Response): Promise<never> => {
   const error: ApiError = {
@@ -156,6 +175,7 @@ const handleApiError = async (response: Response): Promise<never> => {
   }
   throw error;
 };
+
 // Enhanced fetch wrapper with success notifications
 async function fetchApi<T>(endpoint: string, options?: RequestInit & {
   timeout?: number;
@@ -197,6 +217,7 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit & {
     clearTimeout(timeoutId);
   }
 }
+
 // Enhanced Products API with success messages
 export const productsApi = {
   getAll: async (params?: PaginationParams & { exchangeRate?: number }): Promise<PaginatedResponse<ApiProduct>> => {
@@ -381,6 +402,7 @@ export const productsApi = {
     }
   }
 };
+
 // Enhanced Orders API with success messages
 export const ordersApi = {
   getAll: async (): Promise<PaginatedResponse<OrderWithProducts>> => {
@@ -478,6 +500,7 @@ export const ordersApi = {
     }
   }
 };
+
 // Enhanced Customer Orders API with success messages
 export const customerOrdersApi = {
   getAll: async (params?: PaginationParams & {
@@ -634,6 +657,7 @@ export const customerOrdersApi = {
     }
   }
 };
+
 // Enhanced Expenses API with pagination
 export const expensesApi = {
   getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Expense>> => {
