@@ -122,7 +122,7 @@ export function Layout({ children }: LayoutProps) {
                 </linearGradient>
               </defs>
             </svg>
-            <span className="font-bold text-sm sm:text-base">ТЕЛЕСАЙТ</span>
+            <span className="telesite-logo font-bold text-sm sm:text-base text-gray-900 dark:text-white">ТЕЛЕСАЙТ</span>
           </Link>
           
           {/* Переключатель темы */}

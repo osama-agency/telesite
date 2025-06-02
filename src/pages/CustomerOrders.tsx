@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Search, AlertCircle, RefreshCw, Filter, Calendar, Trash2, Package2, Users, ShoppingBag } from 'lucide-react';
 import { useCustomerOrders } from '../hooks/useCustomerOrders';
-import { DateRangePicker } from '../components/ui/DateRangePicker';
+import { ModernDateFilter, DateRange } from '../components/ui/ModernDateFilter';
 import { ImprovedPagination } from '../components/ui/ImprovedPagination';
 import { TableSkeleton } from '../components/ui/TableSkeleton';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -19,8 +19,7 @@ export function CustomerOrders() {
   const [loadMoreMode, setLoadMoreMode] = useState(false);
   const [allLoadedData, setAllLoadedData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFrom, setDateFrom] = useState<string | undefined>();
-  const [dateTo, setDateTo] = useState<string | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange>({});
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string[]>(['shipped', 'processing']); // По умолчанию Отправлено и На отправке
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -117,8 +116,8 @@ export function CustomerOrders() {
   const { data, loading, error, refetch } = useCustomerOrders({
     page,
     limit: ITEMS_PER_PAGE,
-    from: dateFrom,
-    to: dateTo,
+    from: dateRange.from,
+    to: dateRange.to,
     search: debouncedSearch.trim() || undefined,
     statusFilter: statusFilter.length > 0 ? statusFilter : undefined
   });
@@ -143,13 +142,9 @@ export function CustomerOrders() {
     }
   }, [data, loadMoreMode]);
 
-  const handleDateRangeChange = (from?: string, to?: string) => {
-    console.log('handleDateRangeChange called with:', { from, to });
-    setDateFrom(from);
-    setDateTo(to);
-    setPage(1); // Reset to first page when filters change
-    setLoadMoreMode(false);
-    setAllLoadedData([]);
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRange(range);
+    setPage(1); // Reset pagination when filters change
   };
 
   const handlePageChange = (newPage: number) => {
@@ -302,7 +297,7 @@ export function CustomerOrders() {
 
   const allStatuses = ['unpaid', 'paid', 'processing', 'shipped', 'cancelled', 'overdue', 'refunded'];
 
-  const hasActiveFilters = dateFrom || dateTo || searchTerm || 
+  const hasActiveFilters = dateRange.from || dateRange.to || searchTerm || 
     !(statusFilter.length === 2 && statusFilter.includes('shipped') && statusFilter.includes('processing')) &&
     !(statusFilter.length === allStatuses.length) &&
     !(statusFilter.length === 1 && statusFilter.includes('shipped'));
@@ -405,10 +400,10 @@ export function CustomerOrders() {
           <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
             {/* Date Range Picker */}
             <div className="w-full lg:w-auto lg:min-w-[280px]">
-              <DateRangePicker
-                from={dateFrom}
-                to={dateTo}
-                onRangeChange={handleDateRangeChange}
+              <ModernDateFilter
+                value={dateRange}
+                onChange={handleDateRangeChange}
+                placeholder="Выберите период"
                 className="w-full"
               />
             </div>
@@ -444,16 +439,16 @@ export function CustomerOrders() {
                 className="pt-4 sm:pt-6 border-t border-slate-200/50 dark:border-slate-800/50"
               >
                 <div className="flex flex-wrap gap-2 sm:gap-3 min-w-0">
-                  {dateFrom && (
+                  {dateRange.from && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 text-xs sm:text-sm rounded-md border border-purple-200 dark:border-purple-500/20 whitespace-nowrap">
                       <Calendar className="h-3 w-3 flex-shrink-0" />
-                      От: {new Date(dateFrom).toLocaleDateString('ru-RU')}
+                      От: {new Date(dateRange.from).toLocaleDateString('ru-RU')}
                     </span>
                   )}
-                  {dateTo && (
+                  {dateRange.to && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 text-xs sm:text-sm rounded-md border border-purple-200 dark:border-purple-500/20 whitespace-nowrap">
                       <Calendar className="h-3 w-3 flex-shrink-0" />
-                      До: {new Date(dateTo).toLocaleDateString('ru-RU')}
+                      До: {new Date(dateRange.to).toLocaleDateString('ru-RU')}
                     </span>
                   )}
                   {searchTerm && (

@@ -145,6 +145,7 @@ export interface Expense {
   type: 'Логистика' | 'Реклама' | 'ФОТ' | 'Прочее' | 'Закупка товара';
   description: string;
   amount: number;
+  amountRUB?: number;
   productId?: string;
   productName?: string;
   purchaseItems?: Array<{

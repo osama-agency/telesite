@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Calendar, Calculator, Package, X, Save, Loader2, History, Eye, Trash2, Truck, CheckCircle } from 'lucide-react';
 import { productsApi, purchasesApi, expensesApi, type ApiProduct, type Purchase } from '../services/api';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { ProductSelector } from '../components/ui';
 
 interface PurchaseItem {
   productId: string;
@@ -40,6 +42,9 @@ export function Purchases() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [purchaseToDelete, setPurchaseToDelete] = useState<Purchase | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [purchaseForm, setPurchaseForm] = useState<PurchaseForm>({
     date: new Date().toISOString().split('T')[0],
@@ -219,27 +224,39 @@ export function Purchases() {
     }
   };
 
-  const handleDeletePurchase = async (id?: string) => {
-    if (!id) return;
+  const handleDeletePurchase = async (purchase: Purchase) => {
+    setPurchaseToDelete(purchase);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!purchaseToDelete?.id) return;
     
-    console.log('Attempting to delete purchase:', id);
+    console.log('Attempting to delete purchase:', purchaseToDelete.id);
     
-    if (!window.confirm('Удалить эту закупку?')) return;
-    
-    setLoading(true);
+    setIsDeleting(true);
     try {
-      console.log('Calling purchasesApi.delete with id:', id);
-      await purchasesApi.delete(id);
+      console.log('Calling purchasesApi.delete with id:', purchaseToDelete.id);
+      await purchasesApi.delete(purchaseToDelete.id);
       
       console.log('Purchase deleted successfully, updating state');
-      setPurchases(prev => prev.filter(p => p.id !== id));
+      setPurchases(prev => prev.filter(p => p.id !== purchaseToDelete.id));
+      
+      setIsDeleteModalOpen(false);
+      setPurchaseToDelete(null);
       
     } catch (error) {
       console.error('Failed to delete purchase:', error);
       alert('Ошибка при удалении закупки. Проверьте консоль для деталей.');
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
     }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (isDeleting) return;
+    setIsDeleteModalOpen(false);
+    setPurchaseToDelete(null);
   };
 
   const handleOpenReceiveModal = (purchase: Purchase) => {
@@ -471,36 +488,15 @@ export function Purchases() {
                   {/* Product Selection */}
                   <div className="flex-[2]">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Товар</label>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-                      <select
-                        value={item.productId}
-                        onChange={e => updatePurchaseItem(index, 'productId', e.target.value)}
-                        disabled={productsLoading}
-                        className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white backdrop-blur-xl border border-gray-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                      >
-                        <option value="">Выберите товар</option>
-                        {productsLoading ? (
-                          <option disabled>Загрузка товаров...</option>
-                        ) : (
-                          products.map(p => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      {!item.productId && (
-                        <button
-                          type="button"
-                          onClick={() => setIsAddProductModalOpen(true)}
-                          className="w-full sm:w-auto flex-shrink-0 px-3 py-2.5 sm:py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base touch-target"
-                          title="Добавить новый товар"
-                        >
-                          <Plus className="h-4 w-4 flex-shrink-0" />
-                          <span className="sm:hidden">Добавить товар</span>
-                        </button>
-                      )}
-                    </div>
+                    <ProductSelector
+                      products={products}
+                      selectedProductId={item.productId}
+                      onProductSelect={(productId) => updatePurchaseItem(index, 'productId', productId)}
+                      onAddNewProduct={() => setIsAddProductModalOpen(true)}
+                      loading={productsLoading}
+                      placeholder="Выберите товар"
+                      className="flex-1"
+                    />
                   </div>
 
                   {/* Quantity */}
@@ -729,7 +725,7 @@ export function Purchases() {
                       <Eye className="h-4 w-4 text-white" />
                     </button>
                     <button
-                      onClick={() => handleDeletePurchase(purchase.id)}
+                      onClick={() => handleDeletePurchase(purchase)}
                       className="p-2 rounded-lg transition-all duration-300 group relative overflow-hidden bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
                       title="Удалить закупку"
                       disabled={loading}
@@ -1204,6 +1200,40 @@ export function Purchases() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirm Delete Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && purchaseToDelete && (
+          <ConfirmDeleteModal
+            isOpen={isDeleteModalOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            title="Удалить закупку"
+            description="Это действие необратимо. Все данные о закупке будут удалены безвозвратно."
+            itemName={`Закупка от поставщика "${purchaseToDelete.supplier}" на сумму ${purchaseToDelete.totalTRY?.toFixed(2)} TRY`}
+            isDeleting={isDeleting}
+            items={purchaseToDelete.items.map(item => {
+              // Определяем ID продукта для поиска
+              let productId;
+              if (typeof item.productId === 'object' && item.productId !== null) {
+                productId = (item.productId as any).id || (item.productId as any)._id;
+              } else {
+                productId = item.productId;
+              }
+              
+              // Ищем продукт в списке продуктов
+              const product = products.find(p => p.id.toString() === String(productId));
+              
+              return {
+                name: product?.name || `Товар ID: ${productId}`,
+                qty: item.qty,
+                unitPrice: item.unitCostTRY,
+                currency: 'TRY'
+              };
+            })}
+          />
         )}
       </AnimatePresence>
     </motion.div>

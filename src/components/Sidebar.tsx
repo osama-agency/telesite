@@ -206,11 +206,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               }}
             >
               <span 
-                className="text-lg font-normal bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none block"
+                className="telesite-logo text-lg font-normal bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none block"
                 style={{ 
-                  fontFamily: '"Russo One", sans-serif', 
-                  letterSpacing: '0.02em',
-                  fontStyle: 'italic',
                   padding: '0 2px'
                 }}
               >

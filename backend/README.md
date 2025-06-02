@@ -17,7 +17,7 @@ NODE_ENV=development
 MONGO_URI=mongodb://localhost:27017/telesite
 
 # External API Configuration
-API_URL=https://strattera.tgapp.online/api/v1
+API_URL=слhttps://strattera.tgapp.online/api/v1
 API_TOKEN=8cM9wVBrY3p56k4L1VBpIBwOsw
 ```
 

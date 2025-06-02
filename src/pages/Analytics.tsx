@@ -16,12 +16,14 @@ import {
 import { StatCard } from '../components/ui/StatCard';
 import { LoadingState } from '../components/ui/LoadingState';
 import { ErrorState } from '../components/ui/ErrorState';
+import { ModernDateFilter, DateRange } from '../components/ui/ModernDateFilter';
 import { 
   ChartWrapper, 
   AnimatedAreaChart, 
   AnimatedPieChart,
   AnimatedLineChart,
-  LeaderboardChart
+  LeaderboardChart,
+  TailAdminChart
 } from '../components/charts';
 import { useResponsive } from '../hooks/useResponsive';
 import axios from 'axios';
@@ -70,7 +72,10 @@ interface SummaryMetrics {
 }
 
 export function Analytics() {
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('30d');
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last 30 days
+    to: new Date().toISOString().split('T')[0] // Today
+  });
   const { isMobile, isTablet } = useResponsive();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     profit: [],
@@ -127,28 +132,11 @@ export function Analytics() {
     return statusTranslations[status.toLowerCase()] || status;
   };
 
-  // Calculate date range based on selected period
-  const getDateRange = (periodValue: string) => {
-    const now = new Date('2025-05-29'); // Use current date from screenshot
-    const period = periodFilters.find(p => p.value === periodValue);
-    if (!period) return { from: '', to: '' };
-    
-    // For "1y" period, use a wider range to capture all data
-    let fromDate: Date;
-    
-    if (periodValue === '1y') {
-      // Go back 2 years to make sure we capture all data
-      fromDate = new Date(now.getTime() - (2 * 365 * 24 * 60 * 60 * 1000));
-    } else {
-      fromDate = new Date(now.getTime() - (period.days * 24 * 60 * 60 * 1000));
-    }
-    
-    // Extend "to" date slightly into the future to capture recent orders
-    const toDate = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)); // +7 days
-    
+  // Calculate date range for filtering (updated to use dateRange state)
+  const getDateRange = () => {
     return {
-      from: fromDate.toISOString().split('T')[0],
-      to: toDate.toISOString().split('T')[0]
+      from: dateRange.from || '',
+      to: dateRange.to || ''
     };
   };
 
@@ -273,7 +261,7 @@ export function Analytics() {
       // Check if we're in demo mode
       if (window.isDemoMode) {
         // Generate demo data
-        const { from, to } = getDateRange(selectedPeriod);
+        const { from, to } = getDateRange();
           const fromDate = new Date(from);
           const toDate = new Date(to);
         
@@ -335,7 +323,7 @@ export function Analytics() {
           return acc;
         }, {});
 
-        const period = periodFilters.find(p => p.value === selectedPeriod);
+        const period = periodFilters.find(p => p.value === '30d');
         const daysInPeriod = period ? period.days : 30;
         
         const topProducts = Object.values(productStats)
@@ -363,7 +351,7 @@ export function Analytics() {
       }
       
       // Original API calls for non-demo mode
-      const { from, to } = getDateRange(selectedPeriod);
+      const { from, to } = getDateRange();
       
       const [profitRes, purchasesRes, expensesRes, customerOrdersRes] = await Promise.all([
         axios.get(`http://localhost:3000/api/analytics/profit?from=${from}&to=${to}`),
@@ -439,7 +427,7 @@ export function Analytics() {
       }, {});
 
       // Calculate average daily consumption for each product
-      const period = periodFilters.find(p => p.value === selectedPeriod);
+      const period = periodFilters.find(p => p.value === '30d');
       const daysInPeriod = period ? period.days : 30;
       
       const topProducts = Object.values(productStats)
@@ -471,7 +459,7 @@ export function Analytics() {
 
   useEffect(() => {
     fetchAnalyticsData();
-  }, [selectedPeriod]);
+  }, [dateRange]);
 
   // Calculate summary metrics
   const summaryMetrics = React.useMemo(() => {
@@ -615,300 +603,347 @@ export function Analytics() {
   if (error) return <ErrorState message={error} />;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="w-full min-w-0 space-y-6 sm:space-y-8 lg:space-y-10"
-    >
-      {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="w-full"
+    <div className="w-full min-w-0 overflow-hidden relative">
+      {/* Main Container with Improved Responsive Layout */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className={cn(
+          "w-full min-w-0 space-y-4 sm:space-y-6 lg:space-y-8 xl:space-y-10",
+          "p-2 sm:p-4 md:p-6 lg:p-8", // Progressive padding
+        )}
       >
-        <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+        {/* Header Section - Mobile First Design */}
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="w-full space-y-3 sm:space-y-4"
+        >
+          {/* Title and Description */}
+          <div className="space-y-2">
+            <h1 className={cn(
+              "font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent",
+              "text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl",
+              "leading-tight break-words" // Better line height and text wrapping
+            )}>
               Аналитика
             </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1 sm:mt-2">
+            <p className={cn(
+              "text-muted-foreground leading-relaxed",
+              "text-sm sm:text-base lg:text-lg",
+              "max-w-2xl" // Limit line length for readability
+            )}>
               Детальный анализ продаж, прибыли и эффективности
             </p>
           </div>
 
-          {/* Period filter */}
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="w-full sm:w-auto flex-shrink-0"
-          >
-            <div className="inline-flex flex-wrap gap-1 p-1 bg-muted/30 rounded-xl border w-full sm:w-auto">
-              {periodFilters.map((period) => (
-                <button
-                  key={period.value}
-                  onClick={() => setSelectedPeriod(period.value)}
-                  className={`
-                    flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg
-                    transition-all whitespace-nowrap focus-ring min-w-0
-                    ${selectedPeriod === period.value
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }
-                  `}
-                >
-                  {period.label}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Metrics Grid */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
-      >
-        <StatCard
-          title="Общая выручка"
-          value={summaryMetrics.totalRevenue}
-          change={summaryMetrics.revenueTrend}
-          icon={DollarSign}
-          variant="gradient"
-          color="success"
-          suffix="₽"
-          description="За выбранный период"
-          sparkline={revenueChartData.slice(-7).map((d: any) => d.revenue)}
-        />
-        
-        <StatCard
-          title="Чистая прибыль"
-          value={summaryMetrics.totalProfit}
-          change={summaryMetrics.profitTrend}
-          icon={TrendingUp}
-          variant="default"
-          color="primary"
-          suffix="₽"
-          description="После вычета расходов"
-        />
-        
-        <StatCard
-          title="Всего заказов"
-          value={summaryMetrics.totalOrders}
-          change={summaryMetrics.ordersTrend}
-          icon={ShoppingCart}
-          variant="outline"
-          color="info"
-          description="Обработанных заказов"
-        />
-        
-        <StatCard
-          title="Уникальных клиентов"
-          value={summaryMetrics.uniqueCustomers}
-          change={summaryMetrics.customersTrend}
-          icon={Users}
-          variant="minimal"
-          color="warning"
-          description="Активных покупателей"
-        />
-      </motion.div>
-
-      {/* Charts Grid */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="w-full grid gap-6 sm:gap-8 lg:gap-10"
-      >
-        {/* Revenue Chart - Full Width */}
-        <div className="w-full">
-          <ChartWrapper
-            title="Динамика доходов"
-            icon={<BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />}
-          >
-            {revenueChartData.length > 0 ? (
-              <div className="w-full overflow-hidden">
-                <AnimatedAreaChart
-                  data={revenueChartData}
-                  height={isMobile ? 250 : isTablet ? 300 : 350}
-                  keys={['revenue', 'profit']}
-                  index="date"
-                  colors={['#3B82F6', '#10B981']}
-                  legends={['Выручка', 'Прибыль']}
-                />
-              </div>
-            ) : (
-              <EmptyState
-                type="analytics"
-                message="Нет данных о доходах"
-                description="Данные появятся после первых продаж"
-                size="sm"
-                showIllustration={false}
-              />
-            )}
-          </ChartWrapper>
-        </div>
-
-        {/* Two Column Charts */}
-        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
-          {/* Expenses Chart */}
-          <ChartWrapper
-            title="Структура расходов"
-            icon={<PieChart className="h-4 w-4 sm:h-5 sm:w-5" />}
-          >
-            {expensesChartData.some((item: any) => item.value > 0) ? (
-              <div className="w-full overflow-hidden">
-                <AnimatedPieChart
-                  data={expensesChartData.map((expense: any) => ({
-                    id: expense.name,
-                    label: expense.name,
-                    value: expense.value
-                  }))}
-                  colors={COLORS}
-                  height={isMobile ? 200 : 300}
-                />
-              </div>
-            ) : (
-              <EmptyState
-                type="analytics"
-                message="Нет данных о расходах"
-                description="Добавьте расходы в соответствующем разделе"
-                size="sm"
-                action={{
-                  label: "Добавить расход",
-                  onClick: () => navigate('/expenses')
-                }}
-              />
-            )}
-          </ChartWrapper>
-
-          {/* Top Customers */}
-          <ChartWrapper
-            title="Топ клиенты"
-            icon={<Users className="h-4 w-4 sm:h-5 sm:w-5" />}
-          >
-            {analyticsData.customers.length > 0 ? (
-              <div className="w-full overflow-hidden">
-                <LeaderboardChart
-                  data={analyticsData.customers.map((customer: any) => ({
-                    name: customer.name,
-                    value: customer.total
-                  }))}
-                  onItemClick={handleCustomerClick}
-                  height={isMobile ? 200 : 300}
-                  colors={COLORS}
-                  valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
-                />
-              </div>
-            ) : (
-              <EmptyState
-                type="customers"
-                message="Нет данных о клиентах"
-                description="Клиенты появятся после первых заказов"
-                size="sm"
-              />
-            )}
-          </ChartWrapper>
-        </div>
-      </motion.div>
-
-      {/* Additional Charts */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10"
-      >
-        {/* Top Cities */}
-        <ChartWrapper
-          title="География продаж"
-          icon={<MapPin className="h-4 w-4 sm:h-5 sm:w-5" />}
-        >
-          {analyticsData.cities.length > 0 ? (
-            <div className="w-full overflow-hidden">
-              <LeaderboardChart
-                data={analyticsData.cities.map((city: any) => ({
-                  name: city.name,
-                  value: city.total
-                }))}
-                onItemClick={isMobile ? undefined : handleCityClick}
-                height={isMobile ? 180 : 250}
-                colors={COLORS}
-                valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
-              />
-            </div>
-          ) : (
-            <EmptyState
-              type="analytics"
-              message="Нет географических данных"
-              description="Данные появятся после обработки заказов"
-              size="sm"
+          {/* Date Filter - Fully Responsive */}
+          <div className="w-full">
+            <ModernDateFilter
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder="Выберите период анализа"
+              className={cn(
+                "w-full max-w-full",
+                "sm:max-w-md md:max-w-lg", // Responsive max width
+                "transition-all duration-200" // Smooth transitions
+              )}
             />
-          )}
-        </ChartWrapper>
+          </div>
+        </motion.div>
 
-        {/* Top Products */}
-        <ChartWrapper
-          title="Популярные товары"
-          icon={<Package className="h-4 w-4 sm:h-5 sm:w-5" />}
-        >
-          {analyticsData.products.length > 0 ? (
-            <div className="w-full space-y-2 sm:space-y-3">
-              {analyticsData.products.slice(0, 5).map((product: any, index: number) => (
-                <motion.div
-                  key={product.name}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`
-                    flex items-center justify-between gap-3 p-3 sm:p-4
-                    rounded-lg bg-muted/30 hover:bg-muted/50 
-                    transition-colors cursor-pointer group min-w-0
-                  `}
-                  onClick={() => !isMobile && handleProductClick(product)}
-                  whileHover={{ x: 4 }}
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
-                      <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm sm:text-base font-medium truncate">
-                        {product.name}
-                      </p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        {product.avgDailyConsumption.toFixed(1)} шт/день
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-sm sm:text-base font-medium">#{index + 1}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      {product.totalQuantity} шт
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              type="products"
-              message="Нет данных о продуктах"
-              description="Добавьте товары для анализа популярности"
-              size="sm"
-              action={{
-                label: "Перейти к товарам",
-                onClick: () => navigate('/products')
-              }}
-            />
+        {/* Metrics Grid - Enhanced Responsive Grid */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className={cn(
+            "w-full",
+            "grid gap-3 sm:gap-4 md:gap-5 lg:gap-6", // Progressive gap sizes
+            "grid-cols-1", // Always stack on mobile
+            "sm:grid-cols-2", // 2 columns on small screens
+            "lg:grid-cols-4", // 4 columns on large screens
+            "auto-rows-fr" // Equal height rows
           )}
-        </ChartWrapper>
+        >
+          <StatCard
+            title="Общая выручка"
+            value={summaryMetrics.totalRevenue}
+            change={summaryMetrics.revenueTrend}
+            icon={DollarSign}
+            variant="gradient"
+            color="success"
+            suffix="₽"
+            description="За выбранный период"
+            sparkline={revenueChartData.slice(-7).map((d: any) => d.revenue)}
+          />
+          
+          <StatCard
+            title="Чистая прибыль"
+            value={summaryMetrics.totalProfit}
+            change={summaryMetrics.profitTrend}
+            icon={TrendingUp}
+            variant="default"
+            color="primary"
+            suffix="₽"
+            description="После вычета расходов"
+          />
+          
+          <StatCard
+            title="Всего заказов"
+            value={summaryMetrics.totalOrders}
+            change={summaryMetrics.ordersTrend}
+            icon={ShoppingCart}
+            variant="outline"
+            color="info"
+            description="Обработанных заказов"
+          />
+          
+          <StatCard
+            title="Уникальных клиентов"
+            value={summaryMetrics.uniqueCustomers}
+            change={summaryMetrics.customersTrend}
+            icon={Users}
+            variant="minimal"
+            color="warning"
+            description="Активных покупателей"
+          />
+        </motion.div>
+
+        {/* Charts Section - Mobile First Layout */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="w-full space-y-4 sm:space-y-6 lg:space-y-8"
+        >
+          {/* Main Revenue Chart - Full Width with Scroll */}
+          <div className="w-full">
+            <ChartWrapper
+              title="Динамика доходов"
+              icon={<BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />}
+            >
+              {revenueChartData.length > 0 ? (
+                <div className="w-full overflow-x-auto scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300">
+                  <div className="min-w-[320px] sm:min-w-[480px] lg:min-w-0">
+                    <TailAdminChart
+                      data={revenueChartData}
+                      height={isMobile ? 200 : isTablet ? 240 : 320}
+                      keys={['revenue']}
+                      index="date"
+                      colors={['#465FFF']}
+                      legends={['Выручка']}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  type="analytics"
+                  message="Нет данных о доходах"
+                  description="Данные появятся после первых продаж"
+                  size="sm"
+                  showIllustration={false}
+                />
+              )}
+            </ChartWrapper>
+          </div>
+
+          {/* Two Column Charts - Responsive Stack */}
+          <div className={cn(
+            "w-full",
+            "grid gap-4 sm:gap-6 lg:gap-8",
+            "grid-cols-1 lg:grid-cols-2", // Stack on mobile, side-by-side on large screens
+            "auto-rows-fr" // Equal heights
+          )}>
+            {/* Expenses Chart */}
+            <div className="min-w-0">
+              <ChartWrapper
+                title="Структура расходов"
+                icon={<PieChart className="h-4 w-4 sm:h-5 sm:w-5" />}
+              >
+                {expensesChartData.some((item: any) => item.value > 0) ? (
+                  <div className="w-full overflow-hidden">
+                    <AnimatedPieChart
+                      data={expensesChartData.map((expense: any) => ({
+                        id: expense.name,
+                        label: expense.name,
+                        value: expense.value
+                      }))}
+                      colors={COLORS}
+                      height={isMobile ? 180 : isTablet ? 220 : 280}
+                    />
+                  </div>
+                ) : (
+                  <EmptyState
+                    type="analytics"  
+                    message="Нет данных о расходах"
+                    description="Добавьте расходы в соответствующем разделе"
+                    size="sm"
+                    action={{
+                      label: "Добавить расход",
+                      onClick: () => navigate('/expenses')
+                    }}
+                  />
+                )}
+              </ChartWrapper>
+            </div>
+
+            {/* Top Customers */}
+            <div className="min-w-0">
+              <ChartWrapper
+                title="Топ клиенты"
+                icon={<Users className="h-4 w-4 sm:h-5 sm:w-5" />}
+              >
+                {analyticsData.customers.length > 0 ? (
+                  <div className="w-full overflow-hidden">
+                    <LeaderboardChart
+                      data={analyticsData.customers.map((customer: any) => ({
+                        name: customer.name,
+                        value: customer.total
+                      }))}
+                      onItemClick={handleCustomerClick}
+                      height={isMobile ? 180 : isTablet ? 220 : 280}
+                      colors={COLORS}
+                      valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
+                    />
+                  </div>
+                ) : (
+                  <EmptyState
+                    type="customers"
+                    message="Нет данных о клиентах"
+                    description="Клиенты появятся после первых заказов"
+                    size="sm"
+                  />
+                )}
+              </ChartWrapper>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Additional Charts - Adaptive Layout */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className={cn(
+            "w-full",
+            "grid gap-4 sm:gap-6 lg:gap-8",
+            "grid-cols-1 md:grid-cols-2", // Stack on mobile/small, side-by-side on medium+
+            "auto-rows-fr"
+          )}
+        >
+          {/* Geography */}
+          <div className="min-w-0">
+            <ChartWrapper
+              title="География продаж"
+              icon={<MapPin className="h-4 w-4 sm:h-5 sm:w-5" />}
+            >
+              {analyticsData.cities.length > 0 ? (
+                <div className="w-full overflow-hidden">
+                  <LeaderboardChart
+                    data={analyticsData.cities.map((city: any) => ({
+                      name: city.name,
+                      value: city.total
+                    }))}
+                    onItemClick={isMobile ? undefined : handleCityClick}
+                    height={isMobile ? 160 : isTablet ? 200 : 240}
+                    colors={COLORS}
+                    valueFormatter={(value: number) => `₽${value.toLocaleString()}`}
+                  />
+                </div>
+              ) : (
+                <EmptyState
+                  type="analytics"
+                  message="Нет географических данных"
+                  description="Данные появятся после обработки заказов"
+                  size="sm"
+                />
+              )}
+            </ChartWrapper>
+          </div>
+
+          {/* Top Products */}
+          <div className="min-w-0">
+            <ChartWrapper
+              title="Популярные товары"
+              icon={<Package className="h-4 w-4 sm:h-5 sm:w-5" />}
+            >
+              {analyticsData.products.length > 0 ? (
+                <div className={cn(
+                  "w-full space-y-2 sm:space-y-3",
+                  "max-h-64 sm:max-h-72 lg:max-h-80 overflow-y-auto", // Responsive max heights
+                  "scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300"
+                )}>
+                  {analyticsData.products.slice(0, 5).map((product: any, index: number) => (
+                    <motion.div
+                      key={product.name}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={cn(
+                        "flex items-center justify-between gap-2 sm:gap-3",
+                        "p-2 sm:p-3 lg:p-4", // Progressive padding
+                        "rounded-lg bg-muted/30 hover:bg-muted/50",
+                        "transition-all duration-200 cursor-pointer group min-w-0",
+                        !isMobile && "hover:shadow-sm" // Hover effects only on non-mobile
+                      )}
+                      onClick={() => !isMobile && handleProductClick(product)}
+                      whileHover={isMobile ? {} : { x: 4 }}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className={cn(
+                          "flex items-center justify-center rounded-lg bg-primary/10 flex-shrink-0",
+                          "h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10" // Responsive icon size
+                        )}>
+                          <Package className={cn(
+                            "text-primary",
+                            "h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" // Responsive icon size
+                          )} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={cn(
+                            "font-medium truncate",
+                            "text-xs sm:text-sm lg:text-base" // Responsive text size
+                          )}>
+                            {product.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {product.avgDailyConsumption.toFixed(1)} шт/день
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className={cn(
+                          "font-medium",
+                          "text-xs sm:text-sm" // Responsive text
+                        )}>
+                          #{index + 1}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {product.totalQuantity} шт
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  type="products"
+                  message="Нет данных о продуктах"
+                  description="Добавьте товары для анализа популярности"
+                  size="sm"
+                  action={{
+                    label: "Перейти к товарам",
+                    onClick: () => navigate('/products')
+                  }}
+                />
+              )}
+            </ChartWrapper>
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }

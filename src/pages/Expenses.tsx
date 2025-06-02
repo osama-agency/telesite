@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Plus, Search, Filter, Receipt, Edit2, Trash2, Calendar, Package, Truck, Megaphone, Users, MoreHorizontal, ShoppingBag, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { AddExpenseModal, type ExpenseType } from '../components/AddExpenseModal';
-import { ExpenseChart } from '../components/ExpenseChart';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { ExpenseChartDemo } from '../components/ExpenseChartDemo';
 import { expensesApi, type Expense } from '../services/api';
+import { ModernDateFilter, DateRange } from '../components/ui/ModernDateFilter';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/ui/select';
+import { demoExpenses, generateDemoExpenses, type DemoExpense } from '../data/demoExpenses';
 
 // Компонент для отображения товаров закупки
 function PurchaseItemsDisplay({ expense, onShowDetails }: { expense: Expense, onShowDetails?: () => void }) {
@@ -71,18 +75,18 @@ function PurchaseItemsDisplay({ expense, onShowDetails }: { expense: Expense, on
 }
 
 export function Expenses() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<DemoExpense[]>(demoExpenses);
+  const [loading, setLoading] = useState(false); // Для демо версии загрузка не нужна
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [dateRange, setDateRange] = useState({
-    start: '',
-    end: ''
-  });
+  const [dateRange, setDateRange] = useState<DateRange>({});
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState<Expense | null>(null);
+  const [editingExpense, setEditingExpense] = useState<DemoExpense | null>(null);
+  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState<DemoExpense | null>(null);
   const [isPurchaseDetailsModalOpen, setIsPurchaseDetailsModalOpen] = useState(false);
+  const [isDeleteConfirmationModalOpen, setIsDeleteConfirmationModalOpen] = useState(false);
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const expenseTypes = [{
     id: 'Логистика' as ExpenseType,
     name: 'Логистика',
@@ -109,31 +113,38 @@ export function Expenses() {
     icon: MoreHorizontal,
     color: 'gray'
   }];
+  
   useEffect(() => {
-    // Загружаем расходы из API
-    const loadExpenses = async () => {
-      setLoading(true);
-      try {
-        const response = await expensesApi.getAll({ limit: 100 });
-        setExpenses(response.data);
-      } catch (error) {
-        console.error('Failed to load expenses:', error);
-        // В случае ошибки загружаем из localStorage
-        const savedExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
-        setExpenses(savedExpenses);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadExpenses();
+    // Для демо версии используем статичные данные
+    setExpenses(demoExpenses);
   }, []);
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) || expense.productName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === 'all' || expense.type === selectedType;
-    const matchesDateRange = (!dateRange.start || expense.date >= dateRange.start) && (!dateRange.end || expense.date <= dateRange.end);
-    return matchesSearch && matchesType && matchesDateRange;
-  });
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
+  // Filter expenses based on search, type, and date range
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      // Search filter
+      const matchesSearch = searchTerm === '' || 
+        expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (expense.productName && expense.productName.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      // Type filter
+      const matchesType = selectedType === 'all' || expense.type === selectedType;
+
+      // Date filter
+      let matchesDate = true;
+      if (dateRange.from || dateRange.to) {
+        const expenseDate = new Date(expense.date);
+        const fromDate = dateRange.from ? new Date(dateRange.from) : null;
+        const toDate = dateRange.to ? new Date(dateRange.to) : null;
+
+        if (fromDate && expenseDate < fromDate) matchesDate = false;
+        if (toDate && expenseDate > toDate) matchesDate = false;
+      }
+
+      return matchesSearch && matchesType && matchesDate;
+    });
+  }, [expenses, searchTerm, selectedType, dateRange]);
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + (expense.amountRUB ?? expense.amount ?? 0), 0);
   const getTypeInfo = (type: string) => {
     return expenseTypes.find(t => t.id === type) || expenseTypes[3];
   };
@@ -150,39 +161,86 @@ export function Expenses() {
     
     return colors[typeInfo.color as keyof typeof colors];
   };
-  const handleAddExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>) => {
-    try {
-      const newExpense = await expensesApi.create(expense);
-      setExpenses(prev => [...prev, newExpense]);
-    } catch (error) {
-      console.error('Failed to add expense:', error);
-    }
+  
+  // Демо функции для добавления/редактирования расходов (без API)
+  const handleAddExpense = async (expense: {
+    date: string;
+    type: ExpenseType;
+    description: string;
+    amount: number;
+    productId?: string;
+    productName?: string;
+  }) => {
+    const newExpense: DemoExpense = {
+      ...expense,
+      id: `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+      amountRUB: expense.amount
+    };
+    setExpenses(prev => [newExpense, ...prev]);
   };
-  const handleEditExpense = (expense: Expense) => {
+  
+  const handleEditExpense = (expense: DemoExpense) => {
     setEditingExpense(expense);
     setIsAddExpenseModalOpen(true);
   };
-  const handleUpdateExpense = async (updatedExpense: Omit<Expense, 'id' | 'createdAt'>) => {
+  
+  const handleUpdateExpense = async (updatedExpense: {
+    date: string;
+    type: ExpenseType;
+    description: string;
+    amount: number;
+    productId?: string;
+    productName?: string;
+  }) => {
     if (!editingExpense) return;
     
-    try {
-      const updated = await expensesApi.update(editingExpense.id, updatedExpense);
-      setExpenses(prev => prev.map(e => e.id === editingExpense.id ? updated : e));
-      setEditingExpense(null);
-    } catch (error) {
-      console.error('Failed to update expense:', error);
-    }
+    const updated: DemoExpense = {
+      ...updatedExpense,
+      id: editingExpense.id,
+      createdAt: editingExpense.createdAt,
+      amountRUB: updatedExpense.amount
+    };
+    setExpenses(prev => prev.map(e => e.id === editingExpense.id ? updated : e));
+    setEditingExpense(null);
   };
+  
   const handleDeleteExpense = async (id: string) => {
-    if (confirm('Вы уверены, что хотите удалить этот расход?')) {
-      try {
-        await expensesApi.delete(id);
-        setExpenses(prev => prev.filter(e => e.id !== id));
-      } catch (error) {
-        console.error('Failed to delete expense:', error);
-      }
+    setIsDeleting(true);
+    try {
+      // Симуляция задержки для демонстрации loading состояния
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setExpenses(prev => prev.filter(e => e.id !== id));
+      setIsDeleteConfirmationModalOpen(false);
+      setSelectedExpenseId(null);
+      
+      // Добавляем toast уведомление об успешном удалении
+      const { toast } = await import('sonner');
+      toast.success('Расход успешно удален');
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
+      const { toast } = await import('sonner');
+      toast.error('Ошибка при удалении расхода');
+    } finally {
+      setIsDeleting(false);
     }
   };
+  
+  // Функция для открытия модального окна удаления
+  const handleOpenDeleteModal = (expenseId: string) => {
+    console.log('handleOpenDeleteModal called with:', expenseId);
+    setSelectedExpenseId(expenseId);
+    setIsDeleteConfirmationModalOpen(true);
+  };
+  
+  // Функция для закрытия модального окна удаления
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {
+      setIsDeleteConfirmationModalOpen(false);
+      setSelectedExpenseId(null);
+    }
+  };
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
@@ -190,7 +248,26 @@ export function Expenses() {
       minimumFractionDigits: 0
     }).format(amount);
   };
+  // Функция для обновления списка расходов после добавления (для демо версии просто обновляем состояние)
+  const refreshExpenseList = async () => {
+    // В демо версии ничего не делаем, данные уже в state
+  };
   return <div className="flex-1 flex flex-col p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 min-h-full">
+      {/* Demo Banner */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-4 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+            <span className="text-lg">🎭</span>
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">Демонстрационная версия</h3>
+            <p className="text-sm text-blue-100">
+              Показаны примеры данных для демонстрации функционала системы учета расходов
+            </p>
+          </div>
+        </div>
+      </div>
+      
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -237,134 +314,249 @@ export function Expenses() {
           {/* Тип и даты в одном ряду на больших экранах */}
           <div className="flex flex-col lg:flex-row gap-3 lg:gap-4">
             {/* Выбор типа */}
-            <select 
-              value={selectedType} 
-              onChange={e => setSelectedType(e.target.value)} 
-              className="w-full lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-            >
-            <option value="all">Все типы</option>
-              {expenseTypes.map(type => (
-                <option key={type.id} value={type.id}>
-                {type.name}
-                </option>
-              ))}
-          </select>
+            <div className="w-full lg:w-auto lg:min-w-[200px]">
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="w-full lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-red-500">
+                  <SelectValue placeholder="Выберите тип" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все типы</SelectItem>
+                  {expenseTypes.map(type => (
+                    <SelectItem key={type.id} value={type.id}>
+                      <div className="flex items-center">
+                        {type.icon && <type.icon className="h-4 w-4 mr-2 text-muted-foreground" />}
+                        <span>{type.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
-            {/* Даты */}
-            <div className="flex flex-col sm:flex-row gap-2 lg:gap-2 w-full lg:w-auto">
-              <input 
-                type="date" 
-                value={dateRange.start} 
-                onChange={e => setDateRange(prev => ({
-            ...prev,
-            start: e.target.value
-                }))} 
-                className="w-full sm:flex-1 lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" 
-                placeholder="С даты"
-              />
-              <input 
-                type="date" 
-                value={dateRange.end} 
-                onChange={e => setDateRange(prev => ({
-            ...prev,
-            end: e.target.value
-                }))} 
-                className="w-full sm:flex-1 lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" 
-                placeholder="По дату"
+            {/* Современный фильтр дат */}
+            <div className="w-full lg:w-auto lg:min-w-[280px]">
+              <ModernDateFilter
+                value={dateRange}
+                onChange={setDateRange}
+                placeholder="Выберите период"
+                className="w-full"
               />
             </div>
           </div>
         </div>
       </div>
       {/* Chart */}
-      <ExpenseChart expenses={filteredExpenses} />
-      {/* Expenses Table */}
+      <ExpenseChartDemo />
+      {/* Expenses Table/Cards */}
       <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-border rounded-2xl overflow-hidden shadow-xl">
-        {loading ? <div className="p-8 flex items-center justify-center">
+        {loading ? (
+          <div className="p-8 flex items-center justify-center">
             <div className="text-muted-foreground">Загрузка расходов...</div>
-          </div> : <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Дата
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Тип
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Описание
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Товар
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Сумма
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table - показывается только на экранах >= 768px */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Дата
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Тип
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Описание
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Товар
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Сумма
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Действия
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {filteredExpenses.map(expense => {
+                    const typeInfo = getTypeInfo(expense.type);
+                    const TypeIcon = typeInfo.icon;
+                    return (
+                      <tr key={expense.id} className="hover:bg-accent/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>
+                              {new Date(expense.date).toLocaleDateString('ru-RU')}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            <TypeIcon className="h-4 w-4" />
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(expense.type, expense.purchaseItems && expense.purchaseItems.length > 0)}`}>
+                              {typeInfo.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="max-w-xs truncate">
+                            {expense.description}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <PurchaseItemsDisplay 
+                            expense={expense} 
+                            onShowDetails={expense.purchaseItems && expense.purchaseItems.length > 3 ? () => {
+                              setSelectedExpenseForDetails(expense);
+                              setIsPurchaseDetailsModalOpen(true);
+                            } : undefined}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                          {formatCurrency(expense.amountRUB ?? expense.amount)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex items-center space-x-2">
+                            <button onClick={() => handleEditExpense(expense)} className="text-blue-600 hover:text-blue-800 transition-colors">
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => handleOpenDeleteModal(expense.id)} className="text-red-600 hover:text-red-800 transition-colors">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards - показывается только на экранах < 768px */}
+            <div className="md:hidden">
+              <div className="p-4 space-y-4">
                 {filteredExpenses.map(expense => {
-              const typeInfo = getTypeInfo(expense.type);
-              const TypeIcon = typeInfo.icon;
-              return <tr key={expense.id} className="hover:bg-accent/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  const typeInfo = getTypeInfo(expense.type);
+                  const TypeIcon = typeInfo.icon;
+                  return (
+                    <div 
+                      key={expense.id} 
+                      className="card bg-white dark:bg-slate-800 rounded-xl p-4 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all duration-200"
+                    >
+                      {/* Header Row: Date + Actions */}
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>
+                          <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                             {new Date(expense.date).toLocaleDateString('ru-RU')}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
-                          <TypeIcon className="h-4 w-4" />
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(expense.type, expense.purchaseItems && expense.purchaseItems.length > 0)}`}>
-                            {typeInfo.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="max-w-xs truncate">
-                          {expense.description}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <PurchaseItemsDisplay 
-                          expense={expense} 
-                          onShowDetails={expense.purchaseItems && expense.purchaseItems.length > 3 ? () => {
-                            setSelectedExpenseForDetails(expense);
-                            setIsPurchaseDetailsModalOpen(true);
-                          } : undefined}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                        {formatCurrency(expense.amount)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex items-center space-x-2">
-                          <button onClick={() => handleEditExpense(expense)} className="text-blue-600 hover:text-blue-800 transition-colors">
+                          <button 
+                            onClick={() => handleEditExpense(expense)} 
+                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            aria-label="Редактировать расход"
+                          >
                             <Edit2 className="h-4 w-4" />
                           </button>
-                          <button onClick={() => handleDeleteExpense(expense.id)} className="text-red-600 hover:text-red-800 transition-colors">
+                          <button 
+                            onClick={() => handleOpenDeleteModal(expense.id)} 
+                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            aria-label="Удалить расход"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-                      </td>
-                    </tr>;
-            })}
-              </tbody>
-            </table>
-          </div>}
+                      </div>
+
+                      {/* Type Badge */}
+                      <div className="flex items-center space-x-2 mb-3">
+                        <TypeIcon className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getTypeColor(expense.type, expense.purchaseItems && expense.purchaseItems.length > 0)}`}>
+                          🏷 {typeInfo.name}
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <div className="mb-3">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {expense.description}
+                        </p>
+                      </div>
+
+                      {/* Product Info (если есть) */}
+                      {(expense.productName || expense.purchaseItems) && (
+                        <div className="mb-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                          <PurchaseItemsDisplay 
+                            expense={expense} 
+                            onShowDetails={expense.purchaseItems && expense.purchaseItems.length > 3 ? () => {
+                              setSelectedExpenseForDetails(expense);
+                              setIsPurchaseDetailsModalOpen(true);
+                            } : undefined}
+                          />
+                        </div>
+                      )}
+
+                      {/* Amount - Featured */}
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-600">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                          Сумма расхода
+                        </span>
+                        <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                          {formatCurrency(expense.amountRUB ?? expense.amount)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Empty State для мобильных */}
+                {filteredExpenses.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                      <Receipt className="h-8 w-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                      Расходы не найдены
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Попробуйте изменить фильтры или добавить новый расход
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
       {/* Add/Edit Expense Modal */}
-      <AddExpenseModal isOpen={isAddExpenseModalOpen} onClose={() => {
-      setIsAddExpenseModalOpen(false);
-      setEditingExpense(null);
-    }} onSave={editingExpense ? handleUpdateExpense : handleAddExpense} expense={editingExpense} expenseTypes={expenseTypes} />
+      <AddExpenseModal 
+        isOpen={isAddExpenseModalOpen} 
+        onClose={() => {
+          setIsAddExpenseModalOpen(false);
+          setEditingExpense(null);
+        }} 
+        onSave={editingExpense ? handleUpdateExpense : handleAddExpense} 
+        expense={editingExpense ? {
+          ...editingExpense,
+          amount: editingExpense.amountRUB ?? editingExpense.amount ?? 0
+        } : undefined} 
+        expenseTypes={expenseTypes}
+        onExpenseAdded={refreshExpenseList}
+      />
+      
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteConfirmationModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={() => selectedExpenseId && handleDeleteExpense(selectedExpenseId)}
+        itemName={selectedExpenseId ? filteredExpenses.find(e => e.id === selectedExpenseId)?.description : undefined}
+        isDeleting={isDeleting}
+      />
       
       {/* Purchase Details Modal */}
       {isPurchaseDetailsModalOpen && selectedExpenseForDetails && selectedExpenseForDetails.purchaseItems && (
@@ -403,7 +595,7 @@ export function Expenses() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Общая сумма</p>
-                    <p className="font-medium text-red-600">{formatCurrency(selectedExpenseForDetails.amount)}</p>
+                    <p className="font-medium text-red-600">{formatCurrency(selectedExpenseForDetails.amountRUB ?? selectedExpenseForDetails.amount)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Количество товаров</p>

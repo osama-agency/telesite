@@ -8,6 +8,7 @@ import { Orders } from './pages/Orders';
 import { Purchases } from './pages/Purchases';
 import { CustomerOrders } from './pages/CustomerOrders';
 import { Test } from './pages/Test';
+import { ResponsiveDemo } from './pages/ResponsiveDemo';
 import Login from './pages/Login';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from 'sonner';
@@ -52,6 +53,9 @@ export default function App() {
         <Routes>
           {/* Публичный маршрут для страницы входа */}
           <Route path="/login" element={<Login />} />
+          
+          {/* Демо-страница для тестирования адаптивности (без Layout) */}
+          <Route path="/responsive-demo" element={<ResponsiveDemo />} />
           
           {/* Защищенные маршруты приложения */}
           <Route path="/" element={<ProtectedLayout><Analytics /></ProtectedLayout>} />

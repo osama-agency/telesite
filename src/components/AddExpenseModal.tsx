@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { X, Calendar, Package2, Receipt } from 'lucide-react';
+import { X, Calendar, Package2, Receipt, Loader2, Truck, Megaphone, Users, MoreHorizontal, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 export type ExpenseType = 'Логистика' | 'Реклама' | 'ФОТ' | 'Прочее' | 'Закупка товара';
 
@@ -21,7 +22,7 @@ interface AddExpenseModalProps {
     amount: number;
     productId?: string;
     productName?: string;
-  }) => void;
+  }) => Promise<void>;
   expense?: {
     id: string;
     date: string;
@@ -32,6 +33,7 @@ interface AddExpenseModalProps {
     productName?: string;
   } | null;
   expenseTypes: ExpenseTypeInfo[];
+  onExpenseAdded?: () => void;
 }
 
 export function AddExpenseModal({
@@ -39,7 +41,8 @@ export function AddExpenseModal({
   onClose,
   onSave,
   expense,
-  expenseTypes
+  expenseTypes,
+  onExpenseAdded
 }: AddExpenseModalProps) {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -49,6 +52,11 @@ export function AddExpenseModal({
     productId: '',
     productName: ''
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isClosing, setIsClosing] = useState(false);
+
   useEffect(() => {
     if (expense) {
       setFormData({
@@ -59,157 +67,305 @@ export function AddExpenseModal({
         productId: expense.productId || '',
         productName: expense.productName || ''
       });
+    } else {
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        type: '' as ExpenseType | '',
+        description: '',
+        amount: 0,
+        productId: '',
+        productName: ''
+      });
     }
-  }, [expense]);
-  const handleSubmit = (e: React.FormEvent) => {
+    setErrorMessage('');
+    setIsSubmitting(false);
+    setIsClosing(false);
+  }, [expense, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Проверяем, что type выбран
+    setErrorMessage('');
+    
     if (!formData.type) {
+      setErrorMessage('Пожалуйста, выберите тип расхода');
       return;
     }
     
-    onSave({
-      ...formData,
-      type: formData.type as ExpenseType // Теперь мы знаем, что type не пустой
-    });
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      type: '' as ExpenseType | '',
-      description: '',
-      amount: 0,
-      productId: '',
-      productName: ''
-    });
+    setIsSubmitting(true);
+
+    try {
+      await onSave({
+        ...formData,
+        type: formData.type as ExpenseType
+      });
+
+      toast.success(expense ? 'Расход успешно обновлён' : 'Расход успешно добавлен');
+      
+      setIsClosing(true);
+      setTimeout(() => {
+        onClose();
+        if (onExpenseAdded) {
+          onExpenseAdded();
+        }
+        setFormData({
+          date: new Date().toISOString().split('T')[0],
+          type: '' as ExpenseType | '',
+          description: '',
+          amount: 0,
+          productId: '',
+          productName: ''
+        });
+        setIsClosing(false);
+      }, 200);
+
+    } catch (error) {
+      console.error('Failed to save expense:', error);
+      setErrorMessage('Не удалось сохранить расход. Пожалуйста, попробуйте позже.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const handleClose = () => {
+    if (isSubmitting) return;
+    
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 200);
+  };
+
+  // Функция для получения иконки типа расхода
+  const getTypeIcon = (type: ExpenseType) => {
+    switch (type) {
+      case 'Логистика': return Truck;
+      case 'Реклама': return Megaphone;
+      case 'ФОТ': return Users;
+      case 'Закупка товара': return ShoppingBag;
+      default: return MoreHorizontal;
+    }
+  };
+
   if (!isOpen) return null;
-  return <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity" onClick={onClose} />
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-end md:items-center justify-center p-0 md:p-4">
+        {/* Backdrop with blur */}
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" 
+          onClick={handleClose} 
+          aria-modal="true"
+        />
+        
         <motion.div 
           initial={{
-            scale: 0.95,
-            opacity: 0
+            y: 100,
+            opacity: 0,
+            scale: 0.95
           }} 
           animate={{
-            scale: 1,
-            opacity: 1
+            y: isClosing ? 100 : 0,
+            opacity: isClosing ? 0 : 1,
+            scale: isClosing ? 0.95 : 1
           }} 
           exit={{
-            scale: 0.95,
-            opacity: 0
+            y: 100,
+            opacity: 0,
+            scale: 0.95
           }} 
-          className="relative bg-white dark:bg-slate-900 border border-border rounded-2xl shadow-2xl w-full max-w-lg sm:max-w-xl overflow-y-auto max-h-[90vh] p-4 sm:p-6 lg:p-8"
+          transition={{
+            duration: 0.3,
+            ease: [0.4, 0.0, 0.2, 1]
+          }}
+          className="relative w-full md:max-w-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 md:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden max-h-[95vh]"
         >
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 dark:bg-red-900 rounded-xl flex items-center justify-center">
-                <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400" />
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6 md:p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center">
+                  <Receipt className="h-6 w-6 text-white" />
+                </div>
+                <div className="text-white">
+                  <h2 className="text-xl md:text-2xl font-bold">
+                    {expense ? 'Редактировать расход' : 'Новый расход'}
+                  </h2>
+                  <p className="text-sm text-white/80 mt-1">
+                    Заполните детали для учета расходов
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold">
-                  {expense ? 'Редактировать расход' : 'Добавить расход'}
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Заполните детали расхода
-                </p>
-              </div>
+              <button 
+                onClick={handleClose} 
+                disabled={isSubmitting}
+                className="text-white/80 hover:text-white hover:bg-white/20 transition-all duration-200 p-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Закрыть"
+              >
+                <X className="h-6 w-6" />
+              </button>
             </div>
-            <button 
-              onClick={onClose} 
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-accent rounded-lg"
-              aria-label="Закрыть"
-            >
-              <X className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1.5 sm:mb-2">
-                <Calendar className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                Дата
-              </label>
-              <input 
-                type="date" 
-                value={formData.date} 
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  date: e.target.value
-                }))} 
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm sm:text-base" 
-                required 
-                aria-label="Дата расхода"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5 sm:mb-2">Тип</label>
-              <select 
-                value={formData.type} 
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  type: e.target.value as ExpenseType
-                }))} 
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm sm:text-base" 
-                required
-                aria-label="Тип расхода"
-              >
-                <option value="">Выберите тип</option>
-                {expenseTypes.map(type => <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5 sm:mb-2">Описание</label>
-              <input 
-                type="text" 
-                value={formData.description} 
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  description: e.target.value
-                }))} 
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm sm:text-base" 
-                required 
-                placeholder="Краткое описание расхода"
-                aria-label="Описание расхода"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5 sm:mb-2">
-                Сумма (в рублях)
-              </label>
-              <input 
-                type="number" 
-                min="0" 
-                step="0.01" 
-                value={formData.amount} 
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  amount: parseFloat(e.target.value) || 0
-                }))} 
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm sm:text-base" 
-                required 
-                placeholder="0.00"
-                aria-label="Сумма расхода"
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
-              <button 
-                type="button" 
-                onClick={onClose} 
-                className="w-full sm:flex-1 px-4 py-2.5 sm:py-3 border border-border rounded-xl hover:bg-accent transition-colors"
-              >
-                Отмена
-              </button>
-              <button 
-                type="submit" 
-                className="w-full sm:flex-1 px-4 py-2.5 sm:py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
-              >
-                {expense ? 'Сохранить' : 'Добавить'}
-              </button>
-            </div>
-          </form>
+
+          {/* Form Content */}
+          <div className="p-6 md:p-8 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Date Field */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <Calendar className="h-4 w-4 mr-2 text-slate-500 dark:text-slate-400" />
+                  Дата расхода
+                </label>
+                <input 
+                  type="date" 
+                  value={formData.date} 
+                  onChange={e => setFormData(prev => ({
+                    ...prev,
+                    date: e.target.value
+                  }))} 
+                  disabled={isSubmitting}
+                  className="w-full px-4 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed" 
+                  required 
+                  aria-label="Дата расхода"
+                />
+              </div>
+
+              {/* Type Field */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <Package2 className="h-4 w-4 mr-2 text-slate-500 dark:text-slate-400" />
+                  Тип расхода
+                </label>
+                <div className="relative">
+                  <select 
+                    value={formData.type} 
+                    onChange={e => setFormData(prev => ({
+                      ...prev,
+                      type: e.target.value as ExpenseType
+                    }))} 
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed appearance-none" 
+                    required
+                    aria-label="Тип расхода"
+                  >
+                    <option value="">Выберите тип расхода</option>
+                    {expenseTypes.map(type => {
+                      const IconComponent = getTypeIcon(type.id);
+                      return (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {/* Selected type preview */}
+                  {formData.type && (
+                    <div className="absolute right-12 top-1/2 transform -translate-y-1/2 flex items-center">
+                      {(() => {
+                        const IconComponent = getTypeIcon(formData.type as ExpenseType);
+                        return <IconComponent className="h-4 w-4 text-slate-500" />;
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Description Field */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <Receipt className="h-4 w-4 mr-2 text-slate-500 dark:text-slate-400" />
+                  Описание
+                </label>
+                <input 
+                  type="text" 
+                  value={formData.description} 
+                  onChange={e => setFormData(prev => ({
+                    ...prev,
+                    description: e.target.value
+                  }))} 
+                  disabled={isSubmitting}
+                  className="w-full px-4 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed" 
+                  required 
+                  placeholder="Например: Доставка товаров клиентам"
+                  aria-label="Описание расхода"
+                />
+              </div>
+
+              {/* Amount Field */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <span className="text-lg mr-2">₽</span>
+                  Сумма расхода
+                </label>
+                <div className="relative">
+                  <input 
+                    type="number" 
+                    min="0" 
+                    step="0.01" 
+                    value={formData.amount} 
+                    onChange={e => setFormData(prev => ({
+                      ...prev,
+                      amount: parseFloat(e.target.value) || 0
+                    }))} 
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold" 
+                    required 
+                    placeholder="0"
+                    aria-label="Сумма расхода"
+                  />
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-slate-400 font-medium">
+                    ₽
+                  </div>
+                </div>
+                
+                {errorMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
+                  >
+                    <p className="text-red-600 dark:text-red-400 text-sm font-medium">
+                      {errorMessage}
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button 
+                  type="button" 
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                  className="w-full sm:flex-1 px-6 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  Отмена
+                </button>
+                
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full sm:flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {expense ? 'Сохранение...' : 'Добавление...'}
+                    </>
+                  ) : (
+                    <>
+                      <Receipt className="h-4 w-4" />
+                      {expense ? 'Сохранить изменения' : 'Добавить расход'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </motion.div>
       </div>
-    </div>;
+    </div>
+  );
 }

@@ -484,6 +484,23 @@
     @apply min-h-[44px] min-w-[44px];
   }
   
+  /* Mobile dropdown improvements */
+  .mobile-dropdown {
+    @apply transform-gpu;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Prevent viewport zoom on input focus (iOS) */
+  @media screen and (max-width: 768px) {
+    input[type="date"]:focus,
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      font-size: 16px !important;
+    }
+  }
+  
   /* Improved hover states for touch devices */
   @media (hover: hover) {
     .hover-lift:hover {
@@ -553,4 +570,26 @@
 .animate-gradient-x {
   background-size: 200% auto;
   animation: gradient-x 3s ease infinite;
+}
+
+/* Futura PT Extra Bold Italic - локальный шрифт */
+@font-face {
+  font-family: 'Futura PT Extra Bold Italic';
+  src: url('/fonts/Futura PT Extra Bold ItalicW08.woff2') format('woff2');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Класс для логотипа ТЕЛЕСАЙТ */
+.telesite-logo {
+  font-family: 'Futura PT Extra Bold Italic', 'Oswald', sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  padding-top: 0.1em;
+  padding-bottom: 0.05em;
+  display: inline-block;
 } 
