@@ -14,6 +14,8 @@ interface ImprovedPaginationProps {
   hasNextPage?: boolean;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 export function ImprovedPagination({
   currentPage,
   totalPages,

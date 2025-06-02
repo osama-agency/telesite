@@ -7,7 +7,7 @@ import {
   TrendingDown, 
   DollarSign, 
   ShoppingCart, 
-  Users,
+  Users, 
   PieChart,
   Activity,
   MapPin,
@@ -266,16 +266,16 @@ export function Analytics() {
 
   // Fetch analytics data
   const fetchAnalyticsData = async () => {
-    setLoading(true);
-    setError(null);
-    
+      setLoading(true);
+      setError(null);
+      
     try {
       // Check if we're in demo mode
       if (window.isDemoMode) {
         // Generate demo data
         const { from, to } = getDateRange(selectedPeriod);
-        const fromDate = new Date(from);
-        const toDate = new Date(to);
+          const fromDate = new Date(from);
+          const toDate = new Date(to);
         
         // Demo orders
         const demoOrders = generateDemoOrders();
@@ -288,7 +288,7 @@ export function Analytics() {
           const orderDate = parseOrderDate(order.paymentDate);
           return orderDate >= fromDate && orderDate <= toDate;
         });
-        
+
         // Filter expenses by date range
         const filteredExpenses = demoExpenses.filter(expense => {
           const expenseDate = new Date(expense.date);
@@ -309,7 +309,7 @@ export function Analytics() {
         const topCustomers = Object.values(customerStats)
           .sort((a: any, b: any) => b.total - a.total)
           .slice(0, 5);
-        
+
         const cityStats = filteredOrders.reduce((acc: any, order: any) => {
           const city = order.address.split(',')[0]?.trim() || 'Неизвестно';
           const total = order.quantity * order.price;
@@ -329,12 +329,12 @@ export function Analytics() {
           const productName = order.productName;
           if (!acc[productName]) {
             acc[productName] = { name: productName, totalQuantity: 0, orders: 0 };
-          }
+            }
           acc[productName].totalQuantity += order.quantity;
           acc[productName].orders += 1;
           return acc;
         }, {});
-        
+
         const period = periodFilters.find(p => p.value === selectedPeriod);
         const daysInPeriod = period ? period.days : 30;
         
@@ -347,7 +347,7 @@ export function Analytics() {
           }))
           .sort((a: any, b: any) => b.avgDailyConsumption - a.avgDailyConsumption)
           .slice(0, 5);
-        
+
         setAnalyticsData({
           profit: [],
           purchases: [],

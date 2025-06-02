@@ -242,13 +242,13 @@ export function Expenses() {
               onChange={e => setSelectedType(e.target.value)} 
               className="w-full lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
             >
-              <option value="all">Все типы</option>
+            <option value="all">Все типы</option>
               {expenseTypes.map(type => (
                 <option key={type.id} value={type.id}>
-                  {type.name}
+                {type.name}
                 </option>
               ))}
-            </select>
+          </select>
             
             {/* Даты */}
             <div className="flex flex-col sm:flex-row gap-2 lg:gap-2 w-full lg:w-auto">
@@ -256,8 +256,8 @@ export function Expenses() {
                 type="date" 
                 value={dateRange.start} 
                 onChange={e => setDateRange(prev => ({
-                  ...prev,
-                  start: e.target.value
+            ...prev,
+            start: e.target.value
                 }))} 
                 className="w-full sm:flex-1 lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" 
                 placeholder="С даты"
@@ -266,8 +266,8 @@ export function Expenses() {
                 type="date" 
                 value={dateRange.end} 
                 onChange={e => setDateRange(prev => ({
-                  ...prev,
-                  end: e.target.value
+            ...prev,
+            end: e.target.value
                 }))} 
                 className="w-full sm:flex-1 lg:w-auto min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all" 
                 placeholder="По дату"

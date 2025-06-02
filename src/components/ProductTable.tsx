@@ -571,7 +571,7 @@ export function ProductTable({
                     <td className="px-1.5 py-2 whitespace-nowrap">
                       <div className="flex items-center space-x-1">
                         <span className="text-xs">
-                          {product.inDelivery}
+                          {product.inDelivery} 
                         </span>
                         {product.inDelivery > 0 && <button 
                           onClick={() => onReceiveDelivery(product.id)} 

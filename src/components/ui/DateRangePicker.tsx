@@ -30,11 +30,11 @@ export function DateRangePicker({ from, to, onRangeChange, className = '' }: Dat
           width: window.innerWidth - 32 // Полная ширина минус отступы
         });
       } else {
-        setDropdownPosition({
-          top: rect.bottom + window.scrollY + 8,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        });
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
       }
     }
   }, [isOpen]);

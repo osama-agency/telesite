@@ -257,21 +257,21 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
               />
               
               {Object.entries(typeConfig).map(([type, config]) => (
-                <Area
-                  key={type}
-                  type="monotone"
-                  dataKey={type}
-                  stackId="1"
+              <Area
+                key={type}
+                type="monotone"
+                dataKey={type}
+                stackId="1"
                   stroke={config.color}
                   fill={`url(#gradient-${type})`}
                   strokeWidth={2}
                   animationDuration={1000}
                   animationBegin={0}
                   dot={chartData.length === 1 ? <CustomDot /> : false}
-                />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
         )}
       </div>
 
@@ -302,7 +302,7 @@ export function ExpenseChart({ expenses }: ExpenseChartProps) {
             </motion.div>
           );
         })}
-      </div>
+    </div>
     </motion.div>
   );
 }

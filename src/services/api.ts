@@ -40,7 +40,7 @@ export interface PaginatedResponse<T> {
 }
 
 // Базовый URL для API бэкенда
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Типы ошибок API
 export interface ApiError {
