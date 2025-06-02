@@ -4,7 +4,22 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    }
+  ],
   "env": {
-    "VITE_API_URL": "https://ps-open.com/api"
+    "VITE_API_URL": "/api",
+    "MONGODB_URI": "mongodb://127.0.0.1:27017/telesite",
+    "API_URL": "https://strattera.tgapp.online/api/v1",
+    "API_TOKEN": "8cM9wVBrY3p56k4L1VBpIBwOsw",
+    "NODE_ENV": "production"
   }
 } 
