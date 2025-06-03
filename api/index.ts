@@ -110,19 +110,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const client = await connectToDatabase();
         const db = client.db('telesite');
         await db.command({ ping: 1 });
+        
+        // Test external API connection
+        let externalApiStatus = 'disconnected';
+        let externalApiError: string | null = null;
+        try {
+          await makeExternalApiRequest('/health');
+          externalApiStatus = 'connected';
+        } catch (error) {
+          externalApiError = error instanceof Error ? error.message : 'Unknown error';
+        }
+        
         res.status(200).json({ 
           status: 'ok', 
           timestamp: new Date().toISOString(),
           message: 'API is working on Vercel!',
-          database: 'connected'
+          database: 'connected',
+          externalApi: {
+            status: externalApiStatus,
+            url: EXTERNAL_API_URL,
+            error: externalApiError
+          }
         });
       } catch (dbError) {
+        // Test external API connection even if DB fails
+        let externalApiStatus = 'disconnected';
+        let externalApiError: string | null = null;
+        try {
+          await makeExternalApiRequest('/health');
+          externalApiStatus = 'connected';
+        } catch (error) {
+          externalApiError = error instanceof Error ? error.message : 'Unknown error';
+        }
+        
         res.status(200).json({ 
           status: 'ok', 
           timestamp: new Date().toISOString(),
           message: 'API is working on Vercel!',
           database: 'disconnected',
-          dbError: dbError instanceof Error ? dbError.message : 'Unknown database error'
+          dbError: dbError instanceof Error ? dbError.message : 'Unknown database error',
+          externalApi: {
+            status: externalApiStatus,
+            url: EXTERNAL_API_URL,
+            error: externalApiError
+          }
         });
       }
       return;
