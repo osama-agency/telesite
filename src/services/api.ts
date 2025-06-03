@@ -685,27 +685,29 @@ export const expensesApi = {
       const data = await response.json();
       
       // Преобразуем формат ответа бэкенда в ожидаемый формат
-      const transformedExpenses = data.data.map((expense: any) => ({
-        id: expense._id,
+      const transformedExpenses = (data.data || []).map((expense: any) => ({
+        id: expense._id || expense.id,
         date: expense.date,
         type: expense.type,
         description: expense.description,
-        amount: expense.amountRUB, // Преобразуем amountRUB в amount
+        amount: expense.amountRUB || expense.amount || 0, // Преобразуем amountRUB в amount
+        amountRUB: expense.amountRUB || expense.amount || 0,
         productId: expense.productId?._id || expense.productId,
-        productName: expense.productId?.name,
+        productName: expense.productId?.name || expense.productName,
         purchaseItems: expense.purchaseItems,
-        createdAt: expense.createdAt
+        createdAt: expense.createdAt || expense.created_at
       }));
       
       return {
         data: transformedExpenses,
         metadata: {
-          total: data.pagination.total,
-          page: data.pagination.page,
-          limit: data.pagination.limit
+          total: data.pagination?.total || transformedExpenses.length,
+          page: data.pagination?.page || Number(params?.page || 1),
+          limit: data.pagination?.limit || Number(params?.limit || 10)
         }
       };
     } catch (error) {
+      console.error('Error fetching expenses:', error);
       toast.error('Не удалось загрузить расходы');
       throw error;
     }

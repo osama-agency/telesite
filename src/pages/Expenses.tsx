@@ -75,18 +75,19 @@ function PurchaseItemsDisplay({ expense, onShowDetails }: { expense: Expense, on
 }
 
 export function Expenses() {
-  const [expenses, setExpenses] = useState<DemoExpense[]>(demoExpenses);
-  const [loading, setLoading] = useState(false); // Для демо версии загрузка не нужна
+  const [expenses, setExpenses] = useState<(DemoExpense | Expense)[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [dateRange, setDateRange] = useState<DateRange>({});
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<DemoExpense | null>(null);
-  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState<DemoExpense | null>(null);
+  const [editingExpense, setEditingExpense] = useState<(DemoExpense | Expense) | null>(null);
+  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState<(DemoExpense | Expense) | null>(null);
   const [isPurchaseDetailsModalOpen, setIsPurchaseDetailsModalOpen] = useState(false);
   const [isDeleteConfirmationModalOpen, setIsDeleteConfirmationModalOpen] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const expenseTypes = [{
     id: 'Логистика' as ExpenseType,
     name: 'Логистика',
@@ -114,9 +115,24 @@ export function Expenses() {
     color: 'gray'
   }];
   
+  // Load expenses from API or demo data
+  const loadExpenses = async () => {
+    setLoading(true);
+    try {
+      const result = await expensesApi.getAll();
+      setExpenses(result.data);
+      setIsDemoMode(false);
+    } catch (error) {
+      console.warn('Failed to load expenses from API, using demo data:', error);
+      setExpenses(demoExpenses);
+      setIsDemoMode(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Для демо версии используем статичные данные
-    setExpenses(demoExpenses);
+    loadExpenses();
   }, []);
   
   // Filter expenses based on search, type, and date range
@@ -162,7 +178,7 @@ export function Expenses() {
     return colors[typeInfo.color as keyof typeof colors];
   };
   
-  // Демо функции для добавления/редактирования расходов (без API)
+  // Handle add expense
   const handleAddExpense = async (expense: {
     date: string;
     type: ExpenseType;
@@ -171,16 +187,35 @@ export function Expenses() {
     productId?: string;
     productName?: string;
   }) => {
-    const newExpense: DemoExpense = {
-      ...expense,
-      id: `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      amountRUB: expense.amount
-    };
-    setExpenses(prev => [newExpense, ...prev]);
+    try {
+      if (isDemoMode) {
+        // Demo mode fallback
+        const newExpense: DemoExpense = {
+          ...expense,
+          id: `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          createdAt: new Date().toISOString(),
+          amountRUB: expense.amount
+        };
+        setExpenses(prev => [newExpense, ...prev]);
+      } else {
+        // Real API call
+        const newExpense = await expensesApi.create(expense);
+        setExpenses(prev => [newExpense, ...prev]);
+      }
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+      // Fallback to demo mode on error
+      const newExpense: DemoExpense = {
+        ...expense,
+        id: `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: new Date().toISOString(),
+        amountRUB: expense.amount
+      };
+      setExpenses(prev => [newExpense, ...prev]);
+    }
   };
   
-  const handleEditExpense = (expense: DemoExpense) => {
+  const handleEditExpense = (expense: DemoExpense | Expense) => {
     setEditingExpense(expense);
     setIsAddExpenseModalOpen(true);
   };
@@ -205,16 +240,23 @@ export function Expenses() {
     setEditingExpense(null);
   };
   
+  // Handle delete expense
   const handleDeleteExpense = async (id: string) => {
     setIsDeleting(true);
     try {
-      // Симуляция задержки для демонстрации loading состояния
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setExpenses(prev => prev.filter(e => e.id !== id));
+      if (isDemoMode) {
+        // Demo mode - just remove from state
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setExpenses(prev => prev.filter(e => e.id !== id));
+      } else {
+        // Real API call
+        await expensesApi.delete(id);
+        setExpenses(prev => prev.filter(e => e.id !== id));
+      }
+      
       setIsDeleteConfirmationModalOpen(false);
       setSelectedExpenseId(null);
       
-      // Добавляем toast уведомление об успешном удалении
       const { toast } = await import('sonner');
       toast.success('Расход успешно удален');
     } catch (error) {
@@ -254,19 +296,35 @@ export function Expenses() {
   };
   return <div className="flex-1 flex flex-col p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 min-h-full">
       {/* Demo Banner */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-4 shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-            <span className="text-lg">🎭</span>
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg">Демонстрационная версия</h3>
-            <p className="text-sm text-blue-100">
-              Показаны примеры данных для демонстрации функционала системы учета расходов
-            </p>
+      {isDemoMode ? (
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-lg">🎭</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Демонстрационная версия</h3>
+              <p className="text-sm text-blue-100">
+                API недоступно. Показаны примеры данных для демонстрации функционала системы учета расходов
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl p-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-lg">✅</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">API подключено</h3>
+              <p className="text-sm text-green-100">
+                Система работает с реальными данными через API
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

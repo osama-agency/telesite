@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import axios from 'axios';
 
 // MongoDB connection
@@ -243,6 +243,175 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Customer orders endpoints
     if (path.startsWith('/customer-orders')) {
+      // Handle resync endpoint
+      if (cleanPath === '/customer-orders/resync' && method === 'POST') {
+        try {
+          const client = await connectToDatabase();
+          const db = client.db('telesite');
+          const ordersCollection = db.collection('customerOrders');
+
+          // Try to sync from external API
+          try {
+            const externalOrders = await makeExternalApiRequest('/customer-orders');
+            
+            if (externalOrders && Array.isArray(externalOrders)) {
+              // Process and save orders to database
+              const processedOrders = externalOrders.map((order: any) => ({
+                _id: order.id,
+                customerName: order.customerName || 'Unknown Customer',
+                productName: order.productName || 'Unknown Product',
+                quantity: order.quantity || 1,
+                price: order.price || 0,
+                totalAmount: order.totalAmount || (order.quantity * order.price),
+                paymentDate: order.paymentDate || new Date().toISOString(),
+                status: order.status || 'completed',
+                createdAt: new Date(),
+                updatedAt: new Date()
+              }));
+
+              // Clear existing and insert new
+              await ordersCollection.deleteMany({});
+              const result = await ordersCollection.insertMany(processedOrders, { ordered: false });
+              
+              res.status(200).json({ 
+                message: 'Customer orders resynced successfully', 
+                count: result.insertedCount,
+                data: processedOrders
+              });
+            } else {
+              res.status(200).json({ 
+                message: 'No orders found in external API', 
+                count: 0,
+                data: []
+              });
+            }
+          } catch (apiError) {
+            console.error('External API sync failed:', apiError);
+            // Return success with empty result if external API fails
+            res.status(200).json({ 
+              message: 'Resync completed (external API unavailable)', 
+              count: 0,
+              data: [],
+              warning: 'Could not connect to external API'
+            });
+          }
+          return;
+        } catch (dbError) {
+          console.error('Database error in resync:', dbError);
+          res.status(500).json({ 
+            message: 'Failed to resync customer orders', 
+            error: dbError instanceof Error ? dbError.message : 'Database connection failed'
+          });
+          return;
+        }
+      }
+
+      // Handle clear all endpoint
+      if (cleanPath === '/customer-orders/clear-all' && method === 'POST') {
+        try {
+          const client = await connectToDatabase();
+          const db = client.db('telesite');
+          const ordersCollection = db.collection('customerOrders');
+
+          const result = await ordersCollection.deleteMany({});
+          res.status(200).json({ 
+            message: 'All customer orders cleared successfully', 
+            deletedCount: result.deletedCount
+          });
+          return;
+        } catch (dbError) {
+          console.error('Database error in clear-all:', dbError);
+          res.status(500).json({ 
+            message: 'Failed to clear customer orders', 
+            error: dbError instanceof Error ? dbError.message : 'Database connection failed'
+          });
+          return;
+        }
+      }
+
+      // Handle customers endpoint  
+      if (cleanPath === '/customer-orders/customers' && method === 'GET') {
+        try {
+          const client = await connectToDatabase();
+          const db = client.db('telesite');
+          const ordersCollection = db.collection('customerOrders');
+
+          const customers = await ordersCollection.distinct('customerName');
+          res.status(200).json({ data: customers });
+          return;
+        } catch (dbError) {
+          console.error('Database error in customers endpoint:', dbError);
+          res.status(200).json({ 
+            data: ['Demo Customer 1', 'Demo Customer 2'],
+            demo: true,
+            dbError: dbError instanceof Error ? dbError.message : 'Database connection failed'
+          });
+          return;
+        }
+      }
+
+      // Handle specific order operations
+      if (cleanPath.startsWith('/customer-orders/') && cleanPath !== '/customer-orders/resync' && cleanPath !== '/customer-orders/clear-all' && cleanPath !== '/customer-orders/customers') {
+        const orderId = cleanPath.split('/')[2];
+        
+        try {
+          const client = await connectToDatabase();
+          const db = client.db('telesite');
+          const ordersCollection = db.collection('customerOrders');
+
+          if (method === 'PUT') {
+            // Try to use ObjectId if valid, otherwise use string
+            let query: any;
+            if (ObjectId.isValid(orderId)) {
+              query = { _id: new ObjectId(orderId) };
+            } else {
+              query = { _id: orderId };
+            }
+            
+            const result = await ordersCollection.updateOne(
+              query,
+              { $set: { ...req.body, updatedAt: new Date() } }
+            );
+            
+            if (result.matchedCount === 0) {
+              res.status(404).json({ message: 'Order not found' });
+              return;
+            }
+            
+            const updatedOrder = await ordersCollection.findOne(query);
+            res.status(200).json(updatedOrder);
+            return;
+          }
+
+          if (method === 'DELETE') {
+            // Try to use ObjectId if valid, otherwise use string
+            let query: any;
+            if (ObjectId.isValid(orderId)) {
+              query = { _id: new ObjectId(orderId) };
+            } else {
+              query = { _id: orderId };
+            }
+            
+            const result = await ordersCollection.deleteOne(query);
+            
+            if (result.deletedCount === 0) {
+              res.status(404).json({ message: 'Order not found' });
+              return;
+            }
+            
+            res.status(200).json({ message: 'Order deleted successfully' });
+            return;
+          }
+        } catch (dbError) {
+          console.error('Database error in order operations:', dbError);
+          res.status(500).json({ 
+            message: 'Database operation failed', 
+            error: dbError instanceof Error ? dbError.message : 'Unknown database error'
+          });
+          return;
+        }
+      }
+
       if (cleanPath === '/customer-orders' && method === 'GET') {
         try {
           const client = await connectToDatabase();
@@ -299,6 +468,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
             demo: true,
             dbError: dbError instanceof Error ? dbError.message : 'Database connection failed'
+          });
+          return;
+        }
+      }
+
+      // Handle create order
+      if (cleanPath === '/customer-orders' && method === 'POST') {
+        try {
+          const client = await connectToDatabase();
+          const db = client.db('telesite');
+          const ordersCollection = db.collection('customerOrders');
+
+          const orderData = {
+            ...req.body,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+
+          const result = await ordersCollection.insertOne(orderData);
+          res.status(201).json({ 
+            _id: result.insertedId,
+            ...orderData 
+          });
+          return;
+        } catch (dbError) {
+          console.error('Database error in create order:', dbError);
+          res.status(500).json({ 
+            message: 'Failed to create order', 
+            error: dbError instanceof Error ? dbError.message : 'Database connection failed'
           });
           return;
         }
@@ -484,8 +682,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const expensesCollection = db.collection('expenses');
 
         if (cleanPath === '/expenses' && method === 'GET') {
-          const expenses = await expensesCollection.find({}).toArray();
-          res.status(200).json({ data: expenses });
+          const { page = 1, limit = 10 } = query;
+          
+          const expenses = await expensesCollection
+            .find({})
+            .skip((Number(page) - 1) * Number(limit))
+            .limit(Number(limit))
+            .toArray();
+            
+          const total = await expensesCollection.countDocuments({});
+          
+          res.status(200).json({ 
+            data: expenses,
+            pagination: {
+              total,
+              page: Number(page),
+              limit: Number(limit)
+            }
+          });
           return;
         }
 
@@ -509,6 +723,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (cleanPath === '/expenses' && method === 'GET') {
           res.status(200).json({ 
             data: [],
+            pagination: {
+              total: 0,
+              page: Number(query.page || 1),
+              limit: Number(query.limit || 10)
+            },
             demo: true,
             dbError: dbError instanceof Error ? dbError.message : 'Database connection failed'
           });
@@ -536,6 +755,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'POST /api/products/sync',
         'GET /api/orders',
         'GET /api/customer-orders',
+        'POST /api/customer-orders',
+        'POST /api/customer-orders/resync',
+        'POST /api/customer-orders/clear-all',
+        'GET /api/customer-orders/customers',
+        'PUT /api/customer-orders/{id}',
+        'DELETE /api/customer-orders/{id}',
         'GET /api/purchases',
         'POST /api/purchases',
         'GET /api/expenses',
