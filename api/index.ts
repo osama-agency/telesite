@@ -60,8 +60,8 @@ async function connectToDatabase() {
 }
 
 // External API configuration
-const EXTERNAL_API_URL = process.env.API_URL || 'https://strattera.tgapp.online/api/v1';
-const EXTERNAL_API_TOKEN = process.env.API_TOKEN || '8cM9wVBrY3p56k4L1VBpIBwOsw';
+const EXTERNAL_API_URL = (process.env.API_URL || 'https://strattera.tgapp.online/api/v1').trim();
+const EXTERNAL_API_TOKEN = (process.env.API_TOKEN || '8cM9wVBrY3p56k4L1VBpIBwOsw').trim();
 
 // CORS headers
 function setCORSHeaders(res: VercelResponse) {
@@ -74,6 +74,8 @@ function setCORSHeaders(res: VercelResponse) {
 async function makeExternalApiRequest(endpoint: string, method = 'GET', data?: any) {
   try {
     console.log(`Making external API request to: ${EXTERNAL_API_URL}${endpoint}`);
+    console.log(`Using token: ${EXTERNAL_API_TOKEN.substring(0, 10)}...`);
+    console.log(`URL length: ${EXTERNAL_API_URL.length}, Token length: ${EXTERNAL_API_TOKEN.length}`);
     
     const response = await axios({
       url: `${EXTERNAL_API_URL}${endpoint}`,
@@ -103,6 +105,7 @@ async function makeExternalApiRequest(endpoint: string, method = 'GET', data?: a
         console.error('Response error:', error.response.status, error.response.data);
       } else if (error.request) {
         console.error('Request error:', error.message);
+        console.error('Request headers:', error.config?.headers);
       }
     }
     throw error;
