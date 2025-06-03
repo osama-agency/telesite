@@ -68,6 +68,13 @@ const menuItems: MenuItem[] = [
     icon: Receipt,
     gradient: 'from-orange-500 to-red-500',
     description: 'Учет затрат'
+  },
+  {
+    name: 'Синхронизация',
+    href: '/data-sync',
+    icon: Database,
+    gradient: 'from-cyan-500 to-blue-500',
+    description: 'Обновление данных'
   }
 ];
 

@@ -9,6 +9,7 @@ import { Purchases } from './pages/Purchases';
 import { CustomerOrders } from './pages/CustomerOrders';
 import { Test } from './pages/Test';
 import { ResponsiveDemo } from './pages/ResponsiveDemo';
+import DataSync from './pages/DataSync';
 import Login from './pages/Login';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from 'sonner';
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="/purchases" element={<ProtectedLayout><Purchases /></ProtectedLayout>} />
           <Route path="/customer-orders" element={<ProtectedLayout><CustomerOrders /></ProtectedLayout>} />
           <Route path="/test" element={<ProtectedLayout><Test /></ProtectedLayout>} />
+          <Route path="/data-sync" element={<ProtectedLayout><DataSync /></ProtectedLayout>} />
           
           {/* Редирект для несуществующих маршрутов */}
           <Route path="*" element={<Navigate to="/" replace />} />

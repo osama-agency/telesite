@@ -73,18 +73,38 @@ function setCORSHeaders(res: VercelResponse) {
 // Helper function to make external API requests
 async function makeExternalApiRequest(endpoint: string, method = 'GET', data?: any) {
   try {
+    console.log(`Making external API request to: ${EXTERNAL_API_URL}${endpoint}`);
+    
     const response = await axios({
       url: `${EXTERNAL_API_URL}${endpoint}`,
       method,
       headers: {
         'Authorization': `Bearer ${EXTERNAL_API_TOKEN}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'ps-open-analytics/1.0'
       },
-      data
+      data,
+      timeout: 10000, // 10 second timeout
+      validateStatus: (status) => status < 500 // Accept 4xx errors to handle them properly
     });
+    
+    if (response.status >= 400) {
+      console.error(`External API error: ${response.status} - ${response.statusText}`, response.data);
+      throw new Error(`External API error: ${response.status} - ${response.statusText}`);
+    }
+    
+    console.log(`External API response: ${response.status}, data length: ${JSON.stringify(response.data).length}`);
     return response.data;
   } catch (error) {
     console.error('External API error:', error);
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error('Response error:', error.response.status, error.response.data);
+      } else if (error.request) {
+        console.error('Request error:', error.message);
+      }
+    }
     throw error;
   }
 }
@@ -173,28 +193,132 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (cleanPath === '/products/sync' && method === 'POST') {
-          // Sync products from external API
-          const externalProducts = await makeExternalApiRequest('/products');
-          
-          // Process and save products to database
-          const processedProducts = externalProducts.map((product: any) => ({
-            _id: product.id,
-            name: product.name,
-            costPriceTRY: product.costPriceTRY || 0,
-            costPriceRUB: product.costPriceRUB || 0,
-            quantity: product.quantity || 0,
-            logisticsCost: product.logisticsCost || 0,
-            markup: product.markup || 0,
-            marginality: product.marginality || 0,
-            netProfit: product.netProfit || 0,
-            reorderPoint: product.reorderPoint || 10,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }));
+          try {
+            // Sync products from external API
+            const externalProducts = await makeExternalApiRequest('/products');
+            
+            // Clear existing products first
+            await productsCollection.deleteMany({});
+            console.log('Cleared existing products for fresh sync');
+            
+            // Process and save products to database
+            const processedProducts = externalProducts.map((product: any) => ({
+              _id: product.id,
+              id: product.id,
+              name: product.name || 'Unknown Product',
+              description: product.description || '',
+              price: product.price || '0',
+              stock_quantity: product.stock_quantity || 0,
+              created_at: product.created_at || new Date().toISOString(),
+              updated_at: product.updated_at || new Date().toISOString(),
+              ancestry: product.ancestry || '',
+              weight: product.weight || '',
+              dosage_form: product.dosage_form || '',
+              package_quantity: product.package_quantity || 0,
+              main_ingredient: product.main_ingredient || '',
+              brand: product.brand || '',
+              old_price: product.old_price || '',
+              costPriceTRY: product.costPriceTRY || 0,
+              costPriceRUB: product.costPriceRUB || 0,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }));
 
-          await productsCollection.insertMany(processedProducts, { ordered: false });
-          res.status(200).json({ message: 'Products synced successfully', count: processedProducts.length });
-          return;
+            if (processedProducts.length > 0) {
+              await productsCollection.insertMany(processedProducts, { ordered: false });
+            }
+
+            console.log(`Products sync completed: ${processedProducts.length} products saved`);
+            res.status(200).json({ 
+              message: 'Products synchronized successfully', 
+              count: processedProducts.length,
+              source: 'external_api',
+              timestamp: new Date().toISOString()
+            });
+            return;
+          } catch (syncError) {
+            console.error('Failed to sync from external API:', syncError);
+            
+            // Fallback: show that sync failed but keep existing data
+            const existingProducts = await productsCollection.find({}).toArray();
+            
+            res.status(200).json({ 
+              message: 'Синхронизация не удалась. Внешний API недоступен.', 
+              count: existingProducts.length,
+              source: 'local_database',
+              error: syncError instanceof Error ? syncError.message : 'Unknown sync error',
+              timestamp: new Date().toISOString(),
+              warning: 'Показываются последние сохраненные данные'
+            });
+            return;
+          }
+        }
+
+        if (cleanPath === '/products/force-sync' && method === 'POST') {
+          try {
+            console.log('Starting force sync from external API...');
+            
+            // Try to get fresh data from external API
+            const externalProducts = await makeExternalApiRequest('/products');
+            
+            // Clear all existing products
+            const deleteResult = await productsCollection.deleteMany({});
+            console.log(`Deleted ${deleteResult.deletedCount} existing products`);
+            
+            // Save fresh products
+            if (Array.isArray(externalProducts) && externalProducts.length > 0) {
+              const processedProducts = externalProducts.map((product: any) => ({
+                _id: product.id,
+                id: product.id,
+                name: product.name || 'Unknown Product',
+                description: product.description || '',
+                price: product.price || '0',
+                stock_quantity: product.stock_quantity || 0,
+                created_at: product.created_at || new Date().toISOString(),
+                updated_at: product.updated_at || new Date().toISOString(),
+                ancestry: product.ancestry || '',
+                weight: product.weight || '',
+                dosage_form: product.dosage_form || '',
+                package_quantity: product.package_quantity || 0,
+                main_ingredient: product.main_ingredient || '',
+                brand: product.brand || '',
+                old_price: product.old_price || '',
+                costPriceTRY: product.costPriceTRY || 0,
+                costPriceRUB: product.costPriceRUB || 0,
+                forceSync: true,
+                lastSyncDate: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+              }));
+
+              const insertResult = await productsCollection.insertMany(processedProducts, { ordered: false });
+              console.log(`Force sync completed: ${insertResult.insertedCount} products saved`);
+              
+              res.status(200).json({ 
+                message: 'Принудительная синхронизация завершена успешно!', 
+                count: insertResult.insertedCount,
+                source: 'external_api_force',
+                timestamp: new Date().toISOString(),
+                deletedCount: deleteResult.deletedCount
+              });
+            } else {
+              res.status(200).json({ 
+                message: 'Внешний API вернул пустой список товаров', 
+                count: 0,
+                source: 'external_api_force',
+                timestamp: new Date().toISOString()
+              });
+            }
+            return;
+          } catch (forceSyncError) {
+            console.error('Force sync failed:', forceSyncError);
+            res.status(500).json({ 
+              message: 'Принудительная синхронизация не удалась', 
+              error: forceSyncError instanceof Error ? forceSyncError.message : 'Unknown error',
+              timestamp: new Date().toISOString()
+            });
+            return;
+          }
         }
       } catch (dbError) {
         console.error('Database error in products endpoint:', dbError);
@@ -833,6 +957,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return;
         }
       }
+    }
+
+    // Data status endpoint
+    if (path === '/data-status') {
+      try {
+        const client = await connectToDatabase();
+        const db = client.db('telesite');
+        
+        // Check products status
+        const productsCollection = db.collection('products');
+        const productsCount = await productsCollection.countDocuments();
+        const lastProduct = await productsCollection.findOne({}, { sort: { updatedAt: -1 } });
+        
+        // Check customer orders status  
+        const ordersCollection = db.collection('customerOrders');
+        const ordersCount = await ordersCollection.countDocuments();
+        const lastOrder = await ordersCollection.findOne({}, { sort: { updatedAt: -1 } });
+        
+        // Test external API connection
+        let externalApiStatus = 'disconnected';
+        let externalApiError: string | null = null;
+        try {
+          await makeExternalApiRequest('/health');
+          externalApiStatus = 'connected';
+        } catch (error) {
+          externalApiError = error instanceof Error ? error.message : 'Unknown error';
+        }
+        
+        res.status(200).json({
+          timestamp: new Date().toISOString(),
+          database: 'connected',
+          externalApi: {
+            status: externalApiStatus,
+            url: EXTERNAL_API_URL,
+            error: externalApiError
+          },
+          data: {
+            products: {
+              count: productsCount,
+              lastUpdated: lastProduct?.updatedAt || null,
+              hasForceSync: lastProduct?.forceSync || false
+            },
+            orders: {
+              count: ordersCount,
+              lastUpdated: lastOrder?.updatedAt || null
+            }
+          },
+          recommendations: externalApiStatus === 'disconnected' 
+            ? ['Внешний API недоступен - данные могут быть устаревшими', 'Проверьте токен авторизации', 'Попробуйте принудительную синхронизацию через /products/force-sync']
+            : ['Внешний API доступен - данные должны быть актуальными']
+        });
+      } catch (error) {
+        res.status(500).json({
+          timestamp: new Date().toISOString(),
+          database: 'disconnected',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+      return;
     }
 
     // Default response for unknown endpoints
