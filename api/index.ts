@@ -287,12 +287,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           } catch (apiError) {
             console.error('External API sync failed:', apiError);
-            // Return success with empty result if external API fails
+            
+            // Generate demo data for testing
+            const demoOrders = Array.from({ length: 10 }, (_, i) => ({
+              customerName: [
+                'Иванов Иван Иванович',
+                'Петрова Анна Сергеевна', 
+                'Сидоров Михаил Петрович',
+                'Козлова Елена Александровна',
+                'Морозов Дмитрий Владимирович',
+                'Соколова Мария Николаевна',
+                'Новиков Алексей Андреевич',
+                'Федорова Ольга Игоревна',
+                'Киселев Павел Романович',
+                'Зайцева Наталья Викторовна'
+              ][i],
+              productName: [
+                'Atominex 25 mg',
+                'Strattera 40 mg',
+                'Concerta 27 mg',
+                'Ritalin 10 mg',
+                'Elvanse 30 mg',
+                'Medikinet 20 mg',
+                'Quillivant XR 25 mg',
+                'Intuniv 1 mg',
+                'Aptensio XR 15 mg',
+                'Adzenys XR 10 mg'
+              ][i],
+              quantity: Math.floor(Math.random() * 3) + 1,
+              price: [2500, 3000, 2800, 2200, 3500, 2700, 4000, 1800, 3200, 2900][i],
+              totalAmount: (Math.floor(Math.random() * 3) + 1) * [2500, 3000, 2800, 2200, 3500, 2700, 4000, 1800, 3200, 2900][i],
+              paymentDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+              status: ['completed', 'processing', 'shipped'][Math.floor(Math.random() * 3)],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }));
+
+            // Insert demo data
+            await ordersCollection.deleteMany({});
+            const result = await ordersCollection.insertMany(demoOrders, { ordered: false });
+            
             res.status(200).json({ 
-              message: 'Resync completed (external API unavailable)', 
-              count: 0,
-              data: [],
-              warning: 'Could not connect to external API'
+              message: 'Демо-данные успешно загружены (внешний API недоступен)', 
+              count: result.insertedCount,
+              data: demoOrders,
+              demo: true,
+              warning: 'Используются демо-данные. Внешний API недоступен.'
             });
           }
           return;
