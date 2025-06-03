@@ -1,0 +1,24 @@
+# MongoDB Atlas Configuration Template
+# 
+# Create a .env file in the root directory and add this content:
+
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/telesite?retryWrites=true&w=majority
+
+# Replace the following placeholders:
+# <username> - your MongoDB Atlas database user username
+# <password> - your MongoDB Atlas database user password  
+# <cluster> - your MongoDB Atlas cluster URL (e.g., cluster0.abc123.mongodb.net)
+
+# Example:
+# MONGODB_URI=mongodb+srv://myuser:mypassword@cluster0.abc123.mongodb.net/telesite?retryWrites=true&w=majority
+
+# Optional External API Configuration:
+API_URL=https://strattera.tgapp.online/api/v1
+API_TOKEN=8cM9wVBrY3p56k4L1VBpIBwOsw
+
+# Instructions:
+# 1. Create a .env file: touch .env
+# 2. Copy the MONGODB_URI line above to your .env file
+# 3. Replace placeholders with your actual MongoDB Atlas credentials
+# 4. Test connection with: npm run test:mongodb
+# 5. Deploy to Vercel and add MONGODB_URI to Environment Variables 

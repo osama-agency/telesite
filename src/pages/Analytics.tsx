@@ -352,12 +352,13 @@ export function Analytics() {
       
       // Original API calls for non-demo mode
       const { from, to } = getDateRange();
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       
       const [profitRes, purchasesRes, expensesRes, customerOrdersRes] = await Promise.all([
-        axios.get(`http://localhost:3000/api/analytics/profit?from=${from}&to=${to}`),
-        axios.get(`http://localhost:3000/api/analytics/purchases?from=${from}&to=${to}`),
-        axios.get(`http://localhost:3000/api/expenses`), // Get all expenses, filter later
-        axios.get(`http://localhost:3000/api/customer-orders?limit=2000`) // Get ALL orders, not just first 20
+        axios.get(`${apiUrl}/analytics/profit?from=${from}&to=${to}`),
+        axios.get(`${apiUrl}/analytics/purchases?from=${from}&to=${to}`),
+        axios.get(`${apiUrl}/expenses`), // Get all expenses, filter later
+        axios.get(`${apiUrl}/customer-orders?limit=2000`) // Get ALL orders, not just first 20
       ]);
 
       // Get all customer orders and expenses for processing

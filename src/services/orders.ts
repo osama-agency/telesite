@@ -1,12 +1,13 @@
 import { toast } from 'sonner';
 // More defensive API_URL initialization
-const API_URL = (() => {
-  try {
-    return import.meta?.env?.VITE_API_URL || 'http://localhost:3000';
-  } catch {
-    return 'http://localhost:3000';
-  }
-})();
+export const getApiUrl = () => {
+  return import.meta?.env?.VITE_API_URL || '/api';
+};
+
+const getFullApiUrl = () => {
+  return '/api';
+};
+
 export interface OrderProduct {
   id: string;
   name: string;
@@ -26,7 +27,7 @@ export interface Order {
 export const ordersApi = {
   getAll: async (): Promise<Order[]> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`);
+      const response = await fetch(`${getApiUrl()}/orders`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       return await response.json();
     } catch (error) {
@@ -36,7 +37,7 @@ export const ordersApi = {
   },
   create: async (orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'totalTRY' | 'totalRUB'>): Promise<Order> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {
+      const response = await fetch(`${getApiUrl()}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -52,7 +53,7 @@ export const ordersApi = {
   },
   update: async (id: string, updates: Partial<Order>): Promise<Order> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders/${id}`, {
+      const response = await fetch(`${getApiUrl()}/orders/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -68,7 +69,7 @@ export const ordersApi = {
   },
   delete: async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders/${id}`, {
+      const response = await fetch(`${getApiUrl()}/orders/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete order');
@@ -85,7 +86,7 @@ export const ordersApi = {
     deliveryCost: number;
   }): Promise<Order> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/orders/${id}/receive`, {
+      const response = await fetch(`${getApiUrl()}/orders/${id}/receive`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
