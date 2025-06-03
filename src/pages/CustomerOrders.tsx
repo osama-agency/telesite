@@ -538,30 +538,30 @@ export function CustomerOrders() {
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4 text-[10px] md:text-xs font-mono text-slate-500 dark:text-slate-400">
                             <div className="min-w-[60px] md:min-w-[80px]">
-                              #{order.id.endsWith('-0') ? order.id.slice(0, -2) : order.id}
+                              #{order.id && order.id.endsWith('-0') ? order.id.slice(0, -2) : (order.id || 'N/A')}
                             </div>
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4 text-xs md:text-sm font-medium text-slate-900 dark:text-slate-100">
-                            <div className="min-w-[100px] md:min-w-[120px]" title={order.customerName}>
-                              {order.customerName}
+                            <div className="min-w-[100px] md:min-w-[120px]" title={order.customerName || 'Неизвестный клиент'}>
+                              {order.customerName || 'Неизвестный клиент'}
                             </div>
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4 text-xs md:text-sm text-slate-700 dark:text-slate-300">
-                            <div className="min-w-[100px] md:min-w-[120px]" title={order.productName}>
-                              {order.productName}
+                            <div className="min-w-[100px] md:min-w-[120px]" title={order.productName || 'Неизвестный товар'}>
+                              {order.productName || 'Неизвестный товар'}
                             </div>
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4 text-xs md:text-sm text-center text-slate-700 dark:text-slate-300 font-medium">
-                            {order.quantity}
+                            {order.quantity || 0}
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4 text-xs md:text-sm font-semibold text-slate-900 dark:text-slate-100">
                             <div className="min-w-[80px]">
-                              {formatPrice(order.price)}
+                              {formatPrice(order.price || 0)}
                             </div>
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4 text-xs md:text-sm text-slate-700 dark:text-slate-300 hidden xl:table-cell">
                             <div className="min-w-[80px]">
-                              {formatPrice(order.deliveryCost)}
+                              {formatPrice(order.deliveryCost || 0)}
                             </div>
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4 text-xs md:text-sm text-slate-600 dark:text-slate-400">
@@ -571,7 +571,7 @@ export function CustomerOrders() {
                           </td>
                           <td className="px-2 md:px-4 lg:px-6 py-2 md:py-3 lg:py-4">
                             <button
-                              onClick={() => toggleExpand(order.id)}
+                              onClick={() => toggleExpand(order.id || 'unknown')}
                               className="p-1 md:p-1.5 lg:p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
                               title={isExpanded ? "Скрыть детали" : "Показать детали"}
                             >
@@ -601,16 +601,16 @@ export function CustomerOrders() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 text-xs md:text-sm">
                                   <div className="space-y-1">
                                     <span className="text-slate-500 dark:text-slate-400 font-medium">Адрес доставки:</span>
-                                    <p className="text-slate-700 dark:text-slate-300 break-words">{order.address}</p>
+                                    <p className="text-slate-700 dark:text-slate-300 break-words">{order.address || 'Адрес не указан'}</p>
                                   </div>
                                   <div className="space-y-1 xl:hidden">
                                     <span className="text-slate-500 dark:text-slate-400 font-medium">Стоимость доставки:</span>
-                                    <p className="text-slate-700 dark:text-slate-300 font-medium">{formatPrice(order.deliveryCost)}</p>
+                                    <p className="text-slate-700 dark:text-slate-300 font-medium">{formatPrice(order.deliveryCost || 0)}</p>
                                   </div>
                                   <div className="space-y-1">
                                     <span className="text-slate-500 dark:text-slate-400 font-medium">Общая сумма:</span>
                                     <p className="text-slate-900 dark:text-slate-100 font-semibold text-sm md:text-base">
-                                      {formatPrice(order.price + order.deliveryCost)}
+                                      {formatPrice((order.price || 0) + (order.deliveryCost || 0))}
                                     </p>
                                   </div>
                                 </div>
@@ -670,7 +670,7 @@ export function CustomerOrders() {
                     <div className="flex items-center justify-between gap-2">
                       {getStatusBadge(order.status)}
                       <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 flex-shrink-0">
-                        #{order.id.endsWith('-0') ? order.id.slice(0, -2) : order.id}
+                        #{order.id && order.id.endsWith('-0') ? order.id.slice(0, -2) : (order.id || 'N/A')}
                       </span>
                     </div>
 
@@ -678,15 +678,15 @@ export function CustomerOrders() {
                     <div className="space-y-2">
                       <div>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Клиент:</span>
-                        <div className="font-medium text-xs text-slate-900 dark:text-slate-100 truncate mt-0.5">{order.customerName}</div>
+                        <div className="font-medium text-xs text-slate-900 dark:text-slate-100 truncate mt-0.5">{order.customerName || 'Неизвестный клиент'}</div>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Товар:</span>
-                        <div className="text-xs text-slate-700 dark:text-slate-300 truncate mt-0.5">{order.productName}</div>
+                        <div className="text-xs text-slate-700 dark:text-slate-300 truncate mt-0.5">{order.productName || 'Неизвестный товар'}</div>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Адрес:</span>
-                        <div className="text-xs text-slate-600 dark:text-slate-400 break-words mt-0.5">{order.address}</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 break-words mt-0.5">{order.address || 'Адрес не указан'}</div>
                       </div>
                     </div>
 
@@ -694,20 +694,20 @@ export function CustomerOrders() {
                     <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Количество:</span>
-                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{order.quantity} шт</span>
+                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{order.quantity || 0} шт</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Цена:</span>
-                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{formatPrice(order.price)}</span>
+                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{formatPrice(order.price || 0)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Доставка:</span>
-                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{formatPrice(order.deliveryCost)}</span>
+                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{formatPrice(order.deliveryCost || 0)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Сумма:</span>
                         <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">
-                          {formatPrice(order.price + order.deliveryCost)}
+                          {formatPrice((order.price || 0) + (order.deliveryCost || 0))}
                         </span>
                       </div>
                     </div>

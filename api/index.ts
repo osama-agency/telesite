@@ -321,6 +321,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             
             // Generate demo data for testing
             const demoOrders = Array.from({ length: 10 }, (_, i) => ({
+              id: `demo_order_${i + 1}`,
               customerName: [
                 'Иванов Иван Иванович',
                 'Петрова Анна Сергеевна', 
@@ -340,19 +341,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 'Ritalin 10 mg',
                 'Elvanse 30 mg',
                 'Medikinet 20 mg',
-                'Quillivant XR 25 mg',
-                'Intuniv 1 mg',
-                'Aptensio XR 15 mg',
-                'Adzenys XR 10 mg'
+                'Rubifen 5 mg',
+                'Abilify 15 mg',
+                'Risperdal 1 mg',
+                'Attex 100 mg'
               ][i],
               quantity: Math.floor(Math.random() * 3) + 1,
-              price: [2500, 3000, 2800, 2200, 3500, 2700, 4000, 1800, 3200, 2900][i],
-              totalAmount: (Math.floor(Math.random() * 3) + 1) * [2500, 3000, 2800, 2200, 3500, 2700, 4000, 1800, 3200, 2900][i],
+              price: [2500, 3000, 2800, 2200, 3500, 2700, 2000, 2100, 1800, 3200][i],
+              totalAmount: 0, // Will be calculated below
               paymentDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-              status: ['completed', 'processing', 'shipped'][Math.floor(Math.random() * 3)],
+              status: ['pending', 'processing', 'shipped', 'delivered'][Math.floor(Math.random() * 4)],
+              customerId: `customer_${i + 1}`,
+              address: [
+                'Москва, ул. Тверская, д. 12',
+                'Санкт-Петербург, Невский пр., д. 25',
+                'Екатеринбург, ул. Ленина, д. 8',
+                'Новосибирск, ул. Красный пр., д. 15',
+                'Казань, ул. Баумана, д. 30',
+                'Нижний Новгород, ул. Большая Покровская, д. 18',
+                'Челябинск, ул. Кирова, д. 7',
+                'Омск, ул. Ленина, д. 22',
+                'Самара, ул. Молодогвардейская, д. 33',
+                'Ростов-на-Дону, ул. Большая Садовая, д. 105'
+              ][i],
+              deliveryCost: 500,
               createdAt: new Date(),
               updatedAt: new Date()
             }));
+
+            // Calculate totalAmount
+            demoOrders.forEach(order => {
+              order.totalAmount = order.quantity * order.price + order.deliveryCost;
+            });
 
             // Insert demo data
             await ordersCollection.deleteMany({});
